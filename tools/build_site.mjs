@@ -1,8 +1,15 @@
 import {cp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {leaderboardConfig} from '../src/leaderboard-config.js';
+import {validateConfig} from '../src/leaderboard.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
+const boardConfig=process.env.UNICLOUD_ENDPOINT?
+  {provider:'unicloud',spaceId:process.env.UNICLOUD_SPACE_ID||leaderboardConfig.spaceId,endpoint:process.env.UNICLOUD_ENDPOINT}:
+  process.env.SUPABASE_URL||process.env.SUPABASE_PUBLISHABLE_KEY?
+    {provider:'supabase',url:process.env.SUPABASE_URL??'',publishableKey:process.env.SUPABASE_PUBLISHABLE_KEY??''}:leaderboardConfig;
+validateConfig(boardConfig);
 const output=path.resolve(root,'dist');
 if(path.relative(root,output)!=='dist')throw new Error('Build output must stay inside the project dist directory');
 await rm(output,{recursive:true,force:true});
@@ -13,6 +20,12 @@ const copy=async(source,destination=source)=>{
 };
 
 await copy('src');
+await writeFile(path.join(output,'src/leaderboard-config.js'),`export const leaderboardConfig = ${JSON.stringify(boardConfig)};\n`);
+const boardClient=await readFile(path.join(root,'src/leaderboard.js'),'utf8');
+await writeFile(path.join(output,'src/leaderboard.js'),boardClient.replaceAll(
+  '../node_modules/@supabase/supabase-js/dist/umd/supabase.js','../vendor/supabase/supabase.js'));
+await copy('node_modules/@supabase/supabase-js/dist/umd/supabase.js','vendor/supabase/supabase.js');
+await copy('node_modules/@supabase/supabase-js/LICENSE','vendor/supabase/LICENSE');
 await copy('assets/nailong-rounded.glb');
 await copy('assets/audio/SOURCE.md');
 const pages=['index.html','comparison.html','action-review.html'];

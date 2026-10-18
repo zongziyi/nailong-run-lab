@@ -48,10 +48,33 @@ test('the shipped game and review module graphs need no node_modules or external
   visit(new URL('src/main.js',base));visit(new URL('src/action-review.js',base));
   assert.ok(seen.has('vendor/three/build/three.core.js'));
   assert.ok(seen.has('vendor/three/examples/jsm/utils/SkeletonUtils.js'));
+  assert.ok(seen.has('src/leaderboard.js'));
+  assert.match(read('src/leaderboard.js'),/\.\.\/vendor\/supabase\/supabase\.js/);
+  assert.doesNotMatch(read('src/leaderboard.js'),/node_modules\//);
+  assert.ok(read('vendor/supabase/supabase.js').length>100_000);
+  assert.ok(existsSync(new URL('vendor/supabase/LICENSE',output)));
 });
 
 test('the deployment artifact excludes private development files and preserves the Three.js license',()=>{
   const files=readdirSync(output,{recursive:true}).map(file=>String(file).replaceAll('\\','/'));
   assert.ok(files.includes('vendor/three/LICENSE'));
   assert.ok(!files.some(file=>/(?:^|[\\/])(?:\.git|node_modules|tests|tools|source)(?:[\\/]|$)|\.blend$/.test(file)));
+  assert.ok(!files.some(file=>/(?:^|\/)supabase\/leaderboard\.sql$|\.env$|(?:^|\/)uniCloud-aliyun(?:\/|$)/.test(file)));
+});
+
+test('Pages variables produce public runtime config and reject privileged keys',()=>{
+  const build=env=>execFileSync(process.execPath,['tools/build_site.mjs'],{cwd:fileURLToPath(root),env:{...process.env,UNICLOUD_ENDPOINT:'',UNICLOUD_SPACE_ID:'',SUPABASE_URL:'',SUPABASE_PUBLISHABLE_KEY:'',...env},stdio:'pipe'});
+  try{
+    build({SUPABASE_URL:'https://board.example.test',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_buildtest'});
+    const config=read('src/leaderboard-config.js');assert.match(config,/https:\/\/board\.example\.test/);assert.match(config,/sb_publishable_buildtest/);
+    assert.throws(()=>build({SUPABASE_URL:'https://board.example.test',SUPABASE_PUBLISHABLE_KEY:'sb_secret_FORBIDDEN'}));
+    assert.throws(()=>build({SUPABASE_URL:'https://board.example.test',SUPABASE_PUBLISHABLE_KEY:''}));
+    build({UNICLOUD_ENDPOINT:'https://cloud.example.test/nailong-leaderboard',UNICLOUD_SPACE_ID:'mp-6e5e447f-183a-4a77-9646-2a9e9f68753d',SUPABASE_URL:'https://unused.example.test',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_unused'});
+    const unicloud=read('src/leaderboard-config.js');
+    assert.match(unicloud,/"provider":"unicloud"/);assert.match(unicloud,/https:\/\/cloud\.example\.test\/nailong-leaderboard/);
+    assert.doesNotMatch(unicloud,/unused\.example\.test|sb_publishable_unused/);
+    assert.ok(existsSync(new URL('src/unicloud-transport.js',output)));
+    assert.throws(()=>build({UNICLOUD_ENDPOINT:'http://insecure.example.test'}));
+    assert.throws(()=>build({UNICLOUD_ENDPOINT:'https://cloud.example.test/nailong-leaderboard',UNICLOUD_SPACE_ID:'invalid'}));
+  }finally{build({SUPABASE_URL:'',SUPABASE_PUBLISHABLE_KEY:''});}
 });

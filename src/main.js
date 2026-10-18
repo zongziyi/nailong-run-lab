@@ -9,6 +9,7 @@ import {bodyStart,obstacleEnd,frontAt,passageWindow} from './obstacles.js';
 import {GameMusic} from './music.js';
 import {CoinRenderer} from './coin-renderer.js';
 import {CoinSound} from './coin-sound.js';
+import {LeaderboardUI} from './leaderboard-ui.js';
 
 const $=s=>document.querySelector(s);
 const stage=$('#stage'),viewport=$('#viewport');
@@ -35,6 +36,8 @@ syncCoinSoundButton();
 const lifeModeInputs=[...document.querySelectorAll('input[name="life-mode"]')];
 lifeModeInputs.forEach(input=>{input.checked=input.defaultChecked;});
 const lifeModeLabel=()=>runner.maxLives===1?'一条命':'三条命';
+const leaderboardUI=new LeaderboardUI({getMode:()=>runner.mode==='inspect'?
+  Number(lifeModeInputs.find(input=>input.checked).value):runner.maxLives});
 const labels={Idle:'元气待机',Run:'奔跑中',Jump:'腾空中',Slide:'滑铲！',Dive:'下铲中！'};
 let renderer, model, animator, loaded=false;
 let displayedLives=-1,displayedGameOver=false;
@@ -199,7 +202,10 @@ function syncUI(){
   $('#hit-message').hidden=!hurt;
   if(hurt)setText('#hit-message',`撞到${runner.lastDamageLabel}，剩余 ${runner.lives} 条命`);
   stage.classList.toggle('hurt',runner.hitFeedback>0&&!ended);
-  if(ended&&!displayedGameOver)$('#restart').focus({preventScroll:true});
+  if(ended&&!displayedGameOver){
+    leaderboardUI.recordRun({mode:runner.maxLives,distance:Math.floor(runner.distance)});
+    $('#restart').focus({preventScroll:true});
+  }
   displayedGameOver=ended;
 }
 function fail(message,error){window.nailongBoot?.fail(message,error);const loader=$('#loader');loader.hidden=false;loader.querySelector('.loading-ring').hidden=true;loader.querySelector('b').textContent='暂时没能见到奶龙';loader.querySelector('small').textContent=message;$('#retry').hidden=false;console.error(error||message);}
@@ -238,6 +244,7 @@ function input(command){coinSound.unlock();if(runner.input(command))animator.upd
 document.querySelectorAll('[data-input]').forEach(b=>b.addEventListener('click',()=>input(b.dataset.input)));
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',KeyW:'jump',Space:'jump',ArrowDown:'slide',KeyS:'slide'};
 window.addEventListener('keydown',e=>{
+  if(leaderboardUI.isOpen)return;
   if(runner.mode==='run'&&runner.gameOver){
     if(e.code==='Enter'&&!e.repeat){e.preventDefault();setMode('run');}
     else if(keyMap[e.code]&&!(e.code==='Space'&&e.target.closest?.('button')))e.preventDefault();

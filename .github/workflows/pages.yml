@@ -30,6 +30,11 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run build
+        env:
+          UNICLOUD_SPACE_ID: ${{ vars.UNICLOUD_SPACE_ID }}
+          UNICLOUD_ENDPOINT: ${{ vars.UNICLOUD_ENDPOINT }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

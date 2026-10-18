@@ -1,0 +1,12 @@
+{
+  "name": "nailong-leaderboard",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "index.js",
+  "dependencies": {},
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 15,
+    "path": "/nailong-leaderboard"
+  }
+}

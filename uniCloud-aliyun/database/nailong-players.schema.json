@@ -1,0 +1,13 @@
+{
+  "bsonType": "object",
+  "required": ["player_code", "nickname", "created_at"],
+  "permission": {"read": false, "create": false, "update": false, "delete": false},
+  "properties": {
+    "_id": {"bsonType": "string"},
+    "player_code": {"bsonType": "string"},
+    "nickname": {"bsonType": "string", "maxLength": 64},
+    "created_at": {"bsonType": "long"},
+    "best_1": {"bsonType": "object"},
+    "best_3": {"bsonType": "object"}
+  }
+}

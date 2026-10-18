@@ -8,7 +8,10 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-if not exist "node_modules\three\build\three.module.js" (
+set "NAILONG_NEED_DEPS="
+if not exist "node_modules\three\build\three.module.js" set "NAILONG_NEED_DEPS=1"
+if not exist "node_modules\@supabase\supabase-js\dist\umd\supabase.js" set "NAILONG_NEED_DEPS=1"
+if defined NAILONG_NEED_DEPS (
   echo 正在恢复项目依赖，请稍候...
   call npm ci --no-audit --no-fund
   if errorlevel 1 (
