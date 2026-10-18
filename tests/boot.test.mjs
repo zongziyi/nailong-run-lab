@@ -40,6 +40,15 @@ test('a stalled initialization times out with a recovery action',async()=>{
   assert.equal(p.children['.loading-ring'].hidden,true);
 });
 
+test('online loading errors suggest a network retry without asking visitors to start a local server',async()=>{
+  const failed=page('https:',new Error('network unavailable'));await settle();
+  assert.match(failed.children.small.textContent,/network unavailable/);
+  assert.doesNotMatch(failed.children.small.textContent,/启动试玩|本机地址|启动窗口/);
+  const stalled=page('https:');await settle();stalled.timers.get(1)();
+  assert.match(stalled.children.small.textContent,/网络连接/);
+  assert.doesNotMatch(stalled.children.small.textContent,/启动试玩|本机地址|启动窗口/);
+});
+
 test('startup progress is visible and successful model initialization clears its timeout',async()=>{
   const p=page();await settle();p.context.window.nailongBoot.phase('模型已读取 50%');
   assert.equal(p.children.small.textContent,'模型已读取 50%');

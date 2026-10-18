@@ -29,9 +29,9 @@
     fail,
     phase(message){if(!ready)loader.querySelector('small').textContent=message;},
   };
-  window.addEventListener('error',event=>fail(`启动出错：${event.message||'脚本未能加载'}。请保持启动窗口打开后重试。`,event.error));
+  window.addEventListener('error',event=>fail(`启动出错：${event.message||'脚本未能加载'}。请刷新页面后重试。`,event.error));
   window.addEventListener('unhandledrejection',event=>fail(`加载出错：${event.reason?.message||String(event.reason)}。`,event.reason));
-  timer=setTimeout(()=>fail('加载超过 30 秒。请确认“启动试玩.cmd”的窗口仍在运行，再点击重新加载；若仍失败，页面会显示具体错误。'),30000);
+  timer=setTimeout(()=>fail('加载超过 30 秒。请检查网络连接，再点击重新加载；若仍失败，页面会显示具体错误。'),30000);
   loader.querySelector('small').textContent='正在启动 3D 场景…';
-  import('./main.js').catch(error=>fail(`游戏脚本未能启动：${error.message}。请通过本机地址打开，并保持启动窗口运行。`,error));
+  import('./main.js').catch(error=>fail(`游戏脚本未能启动：${error.message}。请检查网络连接并刷新页面后重试。`,error));
 })();
