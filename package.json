@@ -7,7 +7,7 @@
     "start": "node tools/server.mjs",
     "build": "node tools/build_site.mjs",
     "test": "node --experimental-vm-modules --test tests/*.test.mjs",
-    "check": "node --check src/boot.js && node --check src/main.js && node --check src/controller.js && node --check src/runner-animation.js && node --check src/action-review.js && node --check src/animation-contacts.js && node --check src/collision.js && node --check src/route-planner.js && node --check src/obstacles.js && node --check src/obstacle-renderer.js && node --check tools/server.mjs && node tools/check_page.mjs && node tools/check_projection.mjs"
+    "check": "node --check src/boot.js && node --check src/main.js && node --check src/music.js && node --check src/controller.js && node --check src/runner-animation.js && node --check src/action-review.js && node --check src/animation-contacts.js && node --check src/collision.js && node --check src/route-planner.js && node --check src/obstacles.js && node --check src/obstacle-renderer.js && node --check src/coins.js && node --check src/coin-route-planner.js && node --check src/coin-renderer.js && node --check src/coin-sound.js && node --check tools/server.mjs && node tools/check_page.mjs && node tools/check_projection.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

@@ -61,25 +61,28 @@ export class ObstacleCourse {
       if(front+spec.length>obstacleEnd(parent)-2+1e-8)break;
       const child=this.record(kind,parent.lane,timeAtDistance(front-GAME.slidingDepth/2));
       Object.assign(child,{frontDistance:front,baseHeight:OBSTACLES.train.top,parentId:parent.id});
-      this.allocate(child);front=distanceAt(timeAtDistance(front)+GAME.roofGapSeconds);
+      if(!this.validateCoins||this.validateCoins([...this.active,child]))this.allocate(child);
+      front=distanceAt(timeAtDistance(front)+GAME.roofGapSeconds);
     }
   }
   fillAhead(distance,elapsed=timeAtDistance(distance)){
-    const horizon=Math.max(distance+GAME.lookAhead,distanceAt(elapsed+GAME.lookAheadSeconds));
+    // Complete coin detours (especially a train roof and its exit) need the
+    // following rows known before any of their coins are made visible.
+    const horizon=Math.max(distance+GAME.lookAhead,distanceAt(elapsed+GAME.coinLookAheadSeconds));
     while(this.nextFrontDistance<=horizon&&this.free.length>=2){
       const time=this.nextArrivalTime;let candidates=null,proposal=null;
       for(let attempt=0;attempt<GAME.generationAttempts;attempt++){
         this.generationStats.attempts++;
         const draw=this.candidate(time);if(!draw.length)continue;
         const route=this.planner.propose([...this.active,...draw],time);
-        if(route){candidates=draw;proposal=route;break;}
+        if(route&&(!this.validateCoins||this.validateCoins([...this.active,...draw]))){candidates=draw;proposal=route;break;}
       }
       if(!proposal){
         this.generationStats.fallbacks++;
         for(const lane of [-1,0,1]){
           const o=this.record('barrier',lane,time);if(!this.fitsLane(o))continue;
           const route=this.planner.propose([...this.active,o],time);
-          if(route){candidates=[o];proposal=route;break;}
+          if(route&&(!this.validateCoins||this.validateCoins([...this.active,o]))){candidates=[o];proposal=route;break;}
         }
       }
       if(proposal){

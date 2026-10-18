@@ -14,6 +14,7 @@ const copy=async(source,destination=source)=>{
 
 await copy('src');
 await copy('assets/nailong-rounded.glb');
+await copy('assets/audio/SOURCE.md');
 const pages=['index.html','comparison.html','action-review.html'];
 for(const page of pages){
   const source=await readFile(path.join(root,page),'utf8');

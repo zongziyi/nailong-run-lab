@@ -13,6 +13,7 @@ export const GAME = Object.freeze({
   generationAttempts: 8,
   lookAhead: 90,
   lookAheadSeconds: 5,
+  coinLookAheadSeconds: 8,
   exitReactionSeconds: 0.9,
   routeGrid: 0.1,
   routeChangeSeconds: 0.4,

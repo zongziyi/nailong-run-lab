@@ -1,8 +1,15 @@
 import {GAME,OBSTACLES,speedAt,distanceAt,gravity,jumpVelocity} from './game-config.js';
 import {ObstacleCourse,surfaceAt,surfaceHeight,bodyStart,obstacleEnd} from './obstacles.js';
+import {CoinCourse} from './coins.js';
+import {CoinRoutePlanner} from './coin-route-planner.js';
 
 export class RunnerController {
-  constructor(options={}){this.course=new ObstacleCourse(options);this.maxLives=GAME.maxLives;this.reset();}
+  constructor(options={}){
+    this.course=new ObstacleCourse(options);this.coins=new CoinCourse();
+    this.coinPlanner=new CoinRoutePlanner(simulateRoute);
+    this.course.validateCoins=obstacles=>this.coinPlanner.accepts(obstacles);
+    this.maxLives=GAME.maxLives;this.reset();
+  }
   reset(){
     this.mode='inspect';this.paused=false;this.lane=0;this.x=0;this.y=0;this.lean=0;
     this.action='Idle';this.actionTime=0;this.actionSerial=0;this.slideFromDive=false;this.elapsed=0;
@@ -10,6 +17,7 @@ export class RunnerController {
     this.jumpSourceId=null;
     this.lives=this.maxLives;this.gameOver=false;this.protectedUntil=0;
     this.lastDamageAt=-Infinity;this.lastDamageKind=null;this.damageSerial=0;this.course.clear();
+    this.coinCount=0;this.coinSerial=0;this.coinEvents=[];this.coins.clear();this.coinPlanner.clear();
   }
   get speed(){return speedAt(this.elapsed);}
   get distance(){return distanceAt(this.elapsed);}
@@ -19,6 +27,7 @@ export class RunnerController {
   start({maxLives=this.maxLives}={}){
     if(maxLives!==1&&maxLives!==GAME.maxLives)throw new RangeError('生命模式只能选择一条命或三条命');
     this.maxLives=maxLives;this.reset();this.mode='run';this.action='Run';this.course.begin();
+    this.coinPlanner.clear(this.simulationState());this.coinPlanner.extend(this.course,this.coins);
   }
   inspect(){this.reset();}
   togglePause(){if(this.mode==='run'&&!this.gameOver)this.paused=!this.paused;}
@@ -50,6 +59,8 @@ export class RunnerController {
   collisionState(){return {elapsed:this.elapsed,distance:this.distance,x:this.x,y:this.y,action:this.action,
     actionTime:this.actionTime,slideFromDive:this.slideFromDive,supportId:this.supportId,jumpSourceId:this.jumpSourceId,
     grounded:this.grounded,supportType:this.supportType,verticalVelocity:this.verticalVelocity};}
+  simulationState(){return {...this.collisionState(),lane:this.lane,lean:this.lean,actionSerial:this.actionSerial};}
+  drainCoinEvents(){return this.coinEvents.splice(0);}
   land(surface=null){
     this.y=surface?.height??0;this.verticalVelocity=0;this.grounded=true;
     this.supportId=surface?.id??null;this.supportType=surface?.type??'ground';this.jumpSourceId=null;
@@ -121,6 +132,10 @@ export class RunnerController {
         dt=landing.dt;
       }
       this.step(dt,landing);remaining-=dt;
+    }
+    if(!this.simulating){
+      if(!this.gameOver)this.coinPlanner.extend(this.course,this.coins,this.elapsed);
+      this.coinPlanner.prune(this.elapsed);
     }
   }
   step(dt,airLanding=null){
@@ -197,6 +212,34 @@ export class RunnerController {
     if(this.jumpSourceId!==null&&this.course.active.find(o=>o.id===this.jumpSourceId)?.hit){
       this.jumpSourceId=null;this.verticalVelocity=jumpVelocity-gravity*this.actionTime;
     }
-    this.course.recycle(this.distance,this.elapsed);
+    if(!this.simulating){
+      const events=this.coins.collect(previous,this.collisionState(),this.course.active,{fatal:this.gameOver});
+      this.coinCount+=events.length;this.coinSerial+=events.length;this.coinEvents.push(...events);
+      this.coins.recycle(this.distance,this.elapsed,this.course.active);
+      this.course.recycle(this.distance,this.elapsed);
+    }
   }
+}
+
+// Planning runs this very same integration/collision code on isolated records.
+// No RNG, course generation, coin events, renderers or audio run in a probe.
+export function simulateRoute({state,obstacles,commands=[],end,samples=[]}){
+  const probe=Object.create(RunnerController.prototype);
+  const {distance:ignoredDistance,...writableState}=state;
+  Object.assign(probe,writableState,{mode:'run',paused:false,gameOver:false,simulating:true,maxLives:1,lives:1,
+    protectedUntil:0,lastDamageAt:-Infinity,lastDamageKind:null,damageSerial:0});
+  probe.course=Object.create(ObstacleCourse.prototype);probe.course.active=obstacles.map(o=>({...o}));
+  const result=[],events=[...commands.map(c=>({...c,type:'command'})),...samples.map((time,index)=>({time,index,type:'sample'}))]
+    .sort((a,b)=>a.time-b.time||(a.type==='command'?-1:1));
+  let safe=true;
+  for(const event of [...events,{time:end,type:'end'}]){
+    if(event.time<state.elapsed-1e-8||event.time>end+1e-8)continue;
+    while(probe.elapsed<event.time-1e-9&&!probe.gameOver)probe.update(Math.min(.1,event.time-probe.elapsed));
+    if(probe.gameOver){safe=false;break;}
+    if(event.type==='command'){
+      if(event.lane!==undefined){while(probe.lane!==event.lane)probe.input(event.lane>probe.lane?'right':'left');}
+      if(event.action&&!probe.input(event.action)){safe=false;break;}
+    }else if(event.type==='sample')result[event.index]=probe.collisionState();
+  }
+  return {safe:safe&&!probe.gameOver,state:probe.simulationState(),samples:result};
 }

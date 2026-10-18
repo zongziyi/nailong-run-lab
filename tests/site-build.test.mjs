@@ -27,6 +27,9 @@ test('published pages resolve every linked asset under a GitHub Pages project su
   }
   const model=readFileSync(new URL('assets/nailong-rounded.glb',output));
   assert.equal(model.readUInt32LE(0),0x46546c67);assert.ok(model.length>3_000_000);
+  const music=readFileSync(new URL('assets/audio/subway-surfers-main-theme.mp3',output));
+  assert.ok(music.length>3_000_000,'Published music must contain the full track');
+  assert.match(read('assets/audio/SOURCE.md'),/SYBO ApS/);
 });
 
 test('the shipped game and review module graphs need no node_modules or external CDN',()=>{

@@ -6,10 +6,31 @@ import {RunnerAnimation} from './runner-animation.js';
 import {GAME} from './game-config.js';
 import {ObstacleRenderer} from './obstacle-renderer.js';
 import {bodyStart,obstacleEnd,frontAt,passageWindow} from './obstacles.js';
+import {GameMusic} from './music.js';
+import {CoinRenderer} from './coin-renderer.js';
+import {CoinSound} from './coin-sound.js';
 
 const $=s=>document.querySelector(s);
 const stage=$('#stage'),viewport=$('#viewport');
 const runner=new RunnerController();
+const music=new GameMusic($('#background-music'),{onChange:syncMusicButton});
+const coinSound=new CoinSound({onChange:syncCoinSoundButton});
+function syncCoinSoundButton(){
+  const button=$('#coin-sound-toggle');
+  const label=coinSound.muted?'开启金币音效':coinSound.issue?'重试金币音效':'关闭金币音效';
+  button.classList.toggle('muted',coinSound.muted);button.classList.toggle('music-unavailable',!!coinSound.issue&&!coinSound.muted);
+  button.setAttribute('aria-pressed',String(coinSound.muted));button.setAttribute('aria-label',label);button.title=label;
+}
+function syncMusicButton(){
+  const button=$('#music-toggle');
+  const label=music.muted?'开启背景音乐':music.issue?'重试播放背景音乐':'关闭背景音乐';
+  button.classList.toggle('muted',music.muted);
+  button.classList.toggle('music-unavailable',!music.muted&&!!music.issue);
+  button.setAttribute('aria-pressed',String(music.muted));button.setAttribute('aria-label',label);
+  button.title=music.issue&&!music.muted?`${music.issue==='blocked'?'点击开启音乐':'音乐暂时无法播放，点击重试'}`:label;
+}
+syncMusicButton();
+syncCoinSoundButton();
 // A fresh page always starts with three lives, including restored form state.
 const lifeModeInputs=[...document.querySelectorAll('input[name="life-mode"]')];
 lifeModeInputs.forEach(input=>{input.checked=input.defaultChecked;});
@@ -94,6 +115,7 @@ railway.traverse(group=>{
   }
 });
 const obstacleVisuals=new ObstacleRenderer(railway);
+const coinVisuals=new CoinRenderer(railway);
 const trafficArrows=[-1,0,1].map(lane=>{
   const group=new THREE.Group();group.position.x=lane*GAME.laneSpacing;railway.add(group);
   const paint=new THREE.MeshBasicMaterial({color:'#ff5f50',transparent:true,opacity:.9,depthWrite:false});
@@ -124,6 +146,7 @@ function setMode(mode){
     runner.start({maxLives});
   }else runner.inspect();
   obstacleVisuals.reset();shield.visible=false;displayedLives=-1;displayedGameOver=false;
+  coinVisuals.reset();coinSound.stop();
   trafficArrows.forEach(a=>a.group.visible=false);
   cameraFollowHeight=0;touch=null;
   preview.visible=!running;railway.visible=running;
@@ -139,9 +162,12 @@ function setMode(mode){
   sun.position.y=7;sun.target.position.y=0;rim.position.y=5;
   if(running){$('#start').blur();camera.fov=50;camera.updateProjectionMatrix();camera.position.set(0,4.4,8.6);camera.lookAt(0,1.35,-3.7);}
   else setAngle();
-  animator.reset(runner);syncUI();
+  animator.reset(runner);music.sync(runner,{restart:running,retry:running});syncUI();
+  coinSound.unlock();
 }
 function syncUI(){
+  music.sync(runner);
+  coinSound.sync(runner);
   const ended=runner.gameOver;
   $('#pause-overlay').hidden=!runner.paused||ended;
   $('#gameover-overlay').hidden=!ended;
@@ -159,6 +185,7 @@ function syncUI(){
   setText('#distance',String(Math.floor(runner.distance)).padStart(4,'0'));
   setText('#speed',`${(runner.speed/GAME.speed).toFixed(2)}×`);
   setText('#final-distance',String(Math.floor(runner.distance)));
+  setText('#coin-count',String(runner.coinCount));setText('#final-coins',String(runner.coinCount));
   setText('#gameover-message',`${lifeModeLabel()}已用完 · 本次跑过`);
   const warming=runner.mode==='run'&&runner.elapsed<GAME.warmupSeconds;
   setText('#action-label',ended?'本局结束':warming&&runner.action==='Run'?`准备出发 · ${Math.ceil(GAME.warmupSeconds-runner.elapsed)}`:
@@ -195,11 +222,19 @@ $('#view-model').addEventListener('click',()=>setMode('inspect'));
 $('#inspect-overlay').addEventListener('click',()=>setMode('inspect'));
 $('#restart').addEventListener('click',()=>setMode('run'));
 $('#gameover-inspect').addEventListener('click',()=>setMode('inspect'));
-$('#pause').addEventListener('click',()=>{runner.togglePause();syncUI();});
-$('#resume').addEventListener('click',()=>{runner.togglePause();syncUI();});
+function togglePause(){runner.togglePause();music.sync(runner,{retry:true});syncUI();coinSound.unlock();}
+$('#pause').addEventListener('click',togglePause);
+$('#resume').addEventListener('click',togglePause);
+$('#music-toggle').addEventListener('click',()=>{
+  if(music.issue&&!music.muted){music.sync(runner,{retry:true});syncMusicButton();}
+  else music.toggleMuted();
+});
+$('#coin-sound-toggle').addEventListener('click',()=>{
+  if(coinSound.issue&&!coinSound.muted)coinSound.unlock();else coinSound.toggleMuted();
+});
 for(const id of ['#reset','#reset-overlay'])$(id).addEventListener('click',()=>setMode(runner.mode));
 document.querySelectorAll('[data-angle]').forEach(b=>b.addEventListener('click',()=>{setAngle(b.dataset.angle);document.querySelectorAll('[data-angle]').forEach(a=>a.classList.toggle('active',a===b));}));
-function input(command){if(runner.input(command))animator.update(runner,0);syncUI();}
+function input(command){coinSound.unlock();if(runner.input(command))animator.update(runner,0);syncUI();}
 document.querySelectorAll('[data-input]').forEach(b=>b.addEventListener('click',()=>input(b.dataset.input)));
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',KeyW:'jump',Space:'jump',ArrowDown:'slide',KeyS:'slide'};
 window.addEventListener('keydown',e=>{
@@ -209,7 +244,7 @@ window.addEventListener('keydown',e=>{
     return;
   }
   if(e.target.closest?.('button,a,input,textarea,select') && ['Space','Enter'].includes(e.code))return;
-  if(runner.mode==='run' && (keyMap[e.code] || e.code==='Escape')){e.preventDefault();if(e.repeat)return;if(e.code==='Escape'){runner.togglePause();syncUI();}else input(keyMap[e.code]);}
+  if(runner.mode==='run' && (keyMap[e.code] || e.code==='Escape')){e.preventDefault();if(e.repeat)return;if(e.code==='Escape')togglePause();else input(keyMap[e.code]);}
 });
 let touch=null;
 viewport.addEventListener('pointerdown',e=>{if(runner.mode==='run' && !runner.paused && !runner.gameOver)touch={id:e.pointerId,x:e.clientX,y:e.clientY};});
@@ -223,6 +258,10 @@ window.nailongDemo={snapshot:()=>({loaded,mode:runner.mode,paused:runner.paused,
   speed:runner.speed,verticalVelocity:runner.verticalVelocity,grounded:runner.grounded,supportType:runner.supportType,supportId:runner.supportId,
   jumpSourceId:runner.jumpSourceId,actionTime:runner.actionTime,actionSerial:runner.actionSerial,slideFromDive:runner.slideFromDive,
   invincibleRemaining:runner.invincibleRemaining,damageSerial:runner.damageSerial,
+  music:music.snapshot(),
+  coinCount:runner.coinCount,coinSerial:runner.coinSerial,coinSound:coinSound.snapshot(),coinPool:coinVisuals.stats(),
+  coins:runner.coins.active.map(c=>({...c})),coinRouteCommands:runner.coinPlanner.commands.map(c=>({...c})),
+  coinRoutes:runner.coinPlanner.routes.map(r=>({id:r.id,start:r.start,end:r.end,branches:r.branches.map(b=>({commands:b.commands.map(c=>({...c})),points:b.points.map(p=>({...p}))}))})),
   obstacles:runner.course.active.map(o=>({id:o.id,kind:o.kind,lane:o.lane,frontDistance:o.frontDistance,hasRamp:o.hasRamp,
     currentFrontDistance:frontAt(o,runner.elapsed),arrivalTime:o.arrivalTime,motionSpeed:o.motionSpeed,
     baseHeight:o.baseHeight,parentId:o.parentId,eta:passageWindow(o).start-runner.elapsed,
@@ -237,6 +276,7 @@ function animate(){
   if(loaded){
     const elapsedBefore=runner.elapsed;
     runner.update(dt);
+    coinSound.sync(runner);coinSound.play(runner.drainCoinEvents());
     if(runner.mode==='run'){
       const wobble=runner.hitFeedback>0?Math.sin((runner.elapsed-runner.lastDamageAt)*42)*.07*runner.hitFeedback:0;
       actor.position.set(runner.x,runner.y,0);actor.rotation.z=runner.lean+wobble;
@@ -252,6 +292,7 @@ function animate(){
       scenery.forEach((g,i)=>g.position.z=((distance-i*14*stretch+110*stretch)%(126*stretch)+126*stretch)%(126*stretch)-110*stretch);
       trains.forEach(({group,base})=>group.position.z=((distance+base+115)%145+145)%145-115);
       obstacleVisuals.sync(runner.course,distance,runner.elapsed);
+      coinVisuals.sync(runner.coins,distance,runner.elapsed);
       const incoming=runner.gameOver?[]:runner.course.warnings(runner.elapsed);
       trafficArrows.forEach(a=>{a.group.visible=incoming.some(w=>w.lane===a.lane);a.paint.opacity=.7+.25*Math.sin(runner.elapsed*9);});
       shield.visible=runner.invincibleRemaining>0&&!runner.gameOver;
