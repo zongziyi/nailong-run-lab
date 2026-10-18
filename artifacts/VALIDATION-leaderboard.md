@@ -71,4 +71,12 @@ https://fc-mp-6e5e447f-183a-4a77-9646-2a9e9f68753d.next.bspapp.com/nailong-leade
 - 补充本地试玩端口 4188 的来源白名单并重新上传函数，相关 7 项 uniCloud 测试通过。
 - 填入正式接口地址后重新运行完整 `npm test`，仍为 **134 项全部通过**。
 
-真实浏览器的结算提交、双浏览器成绩共享、窄屏及手机交互尚未验收。上述真实接口检查没有提交校验成绩；最高分、重复和并发更新的覆盖仍来自本地自动测试，不能标注为真实云端成绩验收通过。网页发布结果将在发布后补充。
+真实浏览器的结算提交、双浏览器成绩共享、窄屏及手机交互尚未验收。上述真实接口检查没有提交校验成绩；最高分、重复和并发更新的覆盖仍来自本地自动测试，不能标注为真实云端成绩验收通过。
+
+### GitHub Pages 发布与线上检查
+
+- 已提交并推送至 `zongziyi/nailong-run-lab` 的 `main`，功能提交 `cb67eec8922ece3b3791bd5ea446a7ea8fdd9b43`。
+- [GitHub Pages 工作流 39119843692](https://github.com/zongziyi/nailong-run-lab/actions/runs/39119843692) 结论为 `success`，npm 安装、134 项测试、源码检查、构建和部署步骤均通过。
+- 正式游戏地址为 [奶龙快跑](https://zongziyi.github.io/nailong-run-lab/)，沿用原 GitHub Pages 入口。
+- 发布完成后以 `-NoProxy` 读取线上页面、`src/leaderboard-config.js`、`src/unicloud-transport.js` 和 `src/main.js`，均返回 HTTP 200；确认页面包含三个排行榜入口，公开配置指向本次真实 uniCloud 地址，主程序已加载排行榜模块。请求带发布标记查询参数以避免命中旧缓存。
+- 工作树中的最终构建配置与线上地址一致；未向排行榜添加校验成绩。上述为 HTTP 与发布内容验证，不是实际浏览器交互或手机真机验收。
