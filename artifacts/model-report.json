@@ -1,0 +1,40 @@
+{
+  "source": "https://github.com/bigdiu/naiwa-nailoong-blender-model",
+  "author": "WeDai",
+  "blender": "5.2.2 LTS",
+  "vertices": 33566,
+  "faces": 33512,
+  "bounds": [
+    [
+      -1.0577274560928345,
+      1.0577274560928345
+    ],
+    [
+      -0.8128170967102051,
+      0.8218167424201965
+    ],
+    [
+      0.0,
+      3.0
+    ]
+  ],
+  "bones": 16,
+  "hand_region_vertices": 2570,
+  "unweighted_vertices_repaired": 0,
+  "clips": [
+    "Idle",
+    "Run",
+    "Jump",
+    "Slide"
+  ],
+  "glb_bytes": 3668784,
+  "animation_fps": 60,
+  "durations": {
+    "Idle": 2.0,
+    "Run": 0.8,
+    "Jump": 0.9,
+    "Slide": 0.85
+  },
+  "slide_style": "back-leaning slide tackle",
+  "appearance_revision": 1
+}

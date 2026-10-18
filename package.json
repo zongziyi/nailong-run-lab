@@ -1,0 +1,14 @@
+{
+  "name": "nailong-run-lab",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node tools/server.mjs",
+    "test": "node --experimental-vm-modules --test tests/*.test.mjs",
+    "check": "node --check src/boot.js && node --check src/main.js && node --check src/controller.js && node --check src/runner-animation.js && node --check src/action-review.js && node --check src/animation-contacts.js && node --check src/collision.js && node --check src/route-planner.js && node --check src/obstacles.js && node --check src/obstacle-renderer.js && node --check tools/server.mjs && node tools/check_page.mjs && node tools/check_projection.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}

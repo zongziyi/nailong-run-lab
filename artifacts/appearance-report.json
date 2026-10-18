@@ -1,0 +1,52 @@
+{
+  "revision": 1,
+  "source_sha256": "5182d0d10ddbe13b47dc2858fb8d844f3d52e2ae0c6e31397a0a2ecc35542dc5",
+  "texture_sha256": "0369f8875f33b23e8c512c81a89d576814ef83cad20c6459a7662679235d8ebb",
+  "texture_rebaked": false,
+  "animations_unchanged": {
+    "Idle": "8161aa2ae50656ad765796d4dbbb2169f45af7526a6f58796e94dbfd48da4bdd",
+    "Jump": "053e8717a8e371d7f80653af10d509a6226cb76edb6816b14bf7a1489bada9d5",
+    "Run": "bf707c2e3a9e285e43ec811f9dec40ab8b4291f2deaffe02029f9cc3708a88e8",
+    "Slide": "2e5573b1f5583c43517de0727ee761704ccdfc9350dc5c4c3d9f505628ef9448"
+  },
+  "seam": {
+    "removed_center_faces": 419,
+    "center_boundary_edges": 0
+  },
+  "eyes": [
+    {
+      "side": "R",
+      "inset": 0.02,
+      "rotation_degrees": 5.9015326435221285,
+      "center_before": [
+        -0.21165043115615845,
+        -0.18360653519630432,
+        2.8024368286132812
+      ],
+      "center_after": [
+        -0.19165045022964478,
+        -0.20439513027668,
+        2.8024368286132812
+      ],
+      "socket_vertices": 48
+    },
+    {
+      "side": "L",
+      "inset": 0.02,
+      "rotation_degrees": -5.901532643522141,
+      "center_before": [
+        0.21165043115615845,
+        -0.18360653519630432,
+        2.8024368286132812
+      ],
+      "center_after": [
+        0.19165045022964478,
+        -0.20439513027668,
+        2.8024368286132812
+      ],
+      "socket_vertices": 48
+    }
+  ],
+  "vertices": 33566,
+  "faces": 33512
+}

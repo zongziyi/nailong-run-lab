@@ -1,0 +1,18 @@
+import {readFile,access} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
+const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
+const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+assert.equal(ids.length,new Set(ids).size,'Duplicate HTML IDs');
+for(const match of source.matchAll(/\$\('#([^']+)'\)/g))assert.ok(ids.includes(match[1]),`Missing DOM control: ${match[1]}`);
+for(const match of html.matchAll(/(?:src|href)="(\.\/[^"]+)"/g))await access(new URL(`../${match[1].slice(2)}`,import.meta.url));
+for(const name of ['Clock','WebGLRenderer','InstancedMesh'])assert.equal(typeof THREE[name],'function');
+assert.equal(typeof GLTFLoader,'function');assert.equal(typeof OrbitControls,'function');
+const expectedClips=['Idle','Run','Jump','Slide'];
+const data=await readFile(new URL('../assets/nailong-rounded.glb',import.meta.url));
+const gltf=JSON.parse(data.subarray(20,20+data.readUInt32LE(12)).toString('utf8'));
+assert.deepEqual(gltf.animations.map(a=>a.name).sort(),expectedClips.sort());
+console.log(`Page/module checks PASS · ${ids.length} unique controls · Three.js r${THREE.REVISION} · 4 embedded clips`);

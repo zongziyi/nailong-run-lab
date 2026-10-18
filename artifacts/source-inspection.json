@@ -1,0 +1,1243 @@
+{
+  "blender": "5.2.2 LTS",
+  "objects": [
+    {
+      "name": "球体",
+      "type": "MESH",
+      "location": [
+        -1.4577041864395142,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "vertices": 34021,
+      "modifiers": [],
+      "faces": 33980,
+      "bounds": [
+        [
+          -1.9409780502319336,
+          -0.9744303226470947
+        ],
+        [
+          -0.36542510986328125,
+          0.36153486371040344
+        ],
+        [
+          -0.9836906790733337,
+          0.8819102048873901
+        ]
+      ],
+      "materials": [
+        {
+          "name": "yellow",
+          "face_count": 21984,
+          "center": [
+            -1.4577093124389648,
+            -0.018928207457065582,
+            -0.05601947382092476
+          ],
+          "nodes": [
+            {
+              "name": "材质输出",
+              "type": "OUTPUT_MATERIAL",
+              "inputs": {
+                "Displacement": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Thickness": 0.0
+              }
+            },
+            {
+              "name": "原理化 BSDF",
+              "type": "BSDF_PRINCIPLED",
+              "inputs": {
+                "Base Color": [
+                  0.800000011920929,
+                  0.800000011920929,
+                  0.800000011920929,
+                  1.0
+                ],
+                "Metallic": 0.0,
+                "Roughness": 0.5318182110786438,
+                "IOR": 1.0,
+                "Alpha": 1.0,
+                "Thin Wall": false,
+                "Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Weight": 0.0,
+                "Diffuse Roughness": 0.0,
+                "Subsurface Weight": 0.0,
+                "Subsurface Radius": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ],
+                "Subsurface Scale": 0.004999999888241291,
+                "Subsurface IOR": 1.399999976158142,
+                "Subsurface Anisotropy": 0.0,
+                "Specular IOR Level": 0.5,
+                "Specular Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Anisotropic": 0.0,
+                "Anisotropic Rotation": 0.0,
+                "Tangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Transmission Weight": 0.0,
+                "Coat Weight": 0.0,
+                "Coat Roughness": 0.029999999329447746,
+                "Coat IOR": 1.5,
+                "Coat Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Coat Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Sheen Weight": 0.0,
+                "Sheen Roughness": 0.5,
+                "Sheen Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Color": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Strength": 0.0,
+                "Thin Film Thickness": 0.0,
+                "Thin Film IOR": 1.3300000429153442
+              }
+            },
+            {
+              "name": "纹理坐标",
+              "type": "TEX_COORD",
+              "inputs": {}
+            },
+            {
+              "name": "分离 XYZ",
+              "type": "SEPXYZ",
+              "inputs": {
+                "Vector": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              }
+            },
+            {
+              "name": "运算",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.001",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.002",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.003",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.004",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.005",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.006",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.007",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.008",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.009",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.010",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.011",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.012",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.013",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.014",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.015",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.016",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.017",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.018",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.019",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.020",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.021",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.022",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.023",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.024",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.025",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.026",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.027",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.028",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.029",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.030",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.031",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.032",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.033",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.034",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.035",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.036",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.037",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.038",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.039",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.040",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.041",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.042",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.043",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.044",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.045",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.046",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.047",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.048",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.049",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.050",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.051",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.052",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.053",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.054",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.055",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.056",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.057",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.058",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.059",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.060",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.061",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "运算.062",
+              "type": "MATH",
+              "inputs": {
+                "Value": 0.5
+              }
+            },
+            {
+              "name": "混合 (旧版)",
+              "type": "MIX_RGB",
+              "inputs": {
+                "Factor": 0.5,
+                "Color1": [
+                  1.0,
+                  0.6132756471633911,
+                  0.040441278368234634,
+                  1.0
+                ],
+                "Color2": [
+                  0.10914281010627747,
+                  0.0694466084241867,
+                  0.0331212542951107,
+                  1.0
+                ]
+              }
+            },
+            {
+              "name": "混合 (旧版).001",
+              "type": "MIX_RGB",
+              "inputs": {
+                "Factor": 0.5,
+                "Color1": [
+                  0.5,
+                  0.5,
+                  0.5,
+                  1.0
+                ],
+                "Color2": [
+                  0.758380115032196,
+                  0.5034170150756836,
+                  0.24816429615020752,
+                  1.0
+                ]
+              }
+            }
+          ],
+          "links": [
+            "纹理坐标.Generated -> 分离 XYZ.Vector",
+            "分离 XYZ.Y -> 运算.Value",
+            "运算.Value -> 运算.001.Value",
+            "运算.001.Value -> 运算.002.Value",
+            "分离 XYZ.Z -> 运算.003.Value",
+            "运算.003.Value -> 运算.004.Value",
+            "运算.004.Value -> 运算.005.Value",
+            "运算.002.Value -> 运算.006.Value",
+            "运算.005.Value -> 运算.006.Value",
+            "运算.006.Value -> 运算.007.Value",
+            "运算.007.Value -> 运算.008.Value",
+            "运算.008.Value -> 运算.009.Value",
+            "运算.009.Value -> 运算.010.Value",
+            "运算.010.Value -> 运算.011.Value",
+            "运算.010.Value -> 运算.011.Value",
+            "运算.010.Value -> 运算.012.Value",
+            "运算.012.Value -> 运算.013.Value",
+            "运算.011.Value -> 运算.014.Value",
+            "运算.013.Value -> 运算.014.Value",
+            "运算.014.Value -> 运算.015.Value",
+            "分离 XYZ.Z -> 运算.016.Value",
+            "运算.016.Value -> 运算.017.Value",
+            "运算.017.Value -> 运算.018.Value",
+            "运算.018.Value -> 运算.019.Value",
+            "运算.019.Value -> 运算.020.Value",
+            "运算.019.Value -> 运算.020.Value",
+            "运算.019.Value -> 运算.021.Value",
+            "运算.021.Value -> 运算.022.Value",
+            "运算.020.Value -> 运算.023.Value",
+            "运算.022.Value -> 运算.023.Value",
+            "运算.023.Value -> 运算.024.Value",
+            "分离 XYZ.X -> 运算.025.Value",
+            "运算.025.Value -> 运算.026.Value",
+            "运算.026.Value -> 运算.027.Value",
+            "运算.027.Value -> 运算.028.Value",
+            "运算.028.Value -> 运算.029.Value",
+            "运算.028.Value -> 运算.029.Value",
+            "运算.028.Value -> 运算.030.Value",
+            "运算.030.Value -> 运算.031.Value",
+            "运算.029.Value -> 运算.032.Value",
+            "运算.031.Value -> 运算.032.Value",
+            "运算.032.Value -> 运算.033.Value",
+            "分离 XYZ.X -> 运算.034.Value",
+            "运算.034.Value -> 运算.035.Value",
+            "运算.035.Value -> 运算.036.Value",
+            "运算.036.Value -> 运算.037.Value",
+            "运算.037.Value -> 运算.038.Value",
+            "运算.037.Value -> 运算.038.Value",
+            "运算.037.Value -> 运算.039.Value",
+            "运算.039.Value -> 运算.040.Value",
+            "运算.038.Value -> 运算.041.Value",
+            "运算.040.Value -> 运算.041.Value",
+            "运算.033.Value -> 运算.042.Value",
+            "运算.041.Value -> 运算.042.Value",
+            "分离 XYZ.Z -> 运算.043.Value",
+            "运算.043.Value -> 运算.044.Value",
+            "运算.044.Value -> 运算.045.Value",
+            "运算.045.Value -> 运算.046.Value",
+            "运算.046.Value -> 运算.047.Value",
+            "运算.046.Value -> 运算.047.Value",
+            "运算.046.Value -> 运算.048.Value",
+            "运算.048.Value -> 运算.049.Value",
+            "运算.047.Value -> 运算.050.Value",
+            "运算.049.Value -> 运算.050.Value",
+            "分离 XYZ.Z -> 运算.051.Value",
+            "运算.051.Value -> 运算.052.Value",
+            "运算.052.Value -> 运算.053.Value",
+            "运算.053.Value -> 运算.054.Value",
+            "运算.054.Value -> 运算.055.Value",
+            "运算.054.Value -> 运算.055.Value",
+            "运算.054.Value -> 运算.056.Value",
+            "运算.056.Value -> 运算.057.Value",
+            "运算.055.Value -> 运算.058.Value",
+            "运算.057.Value -> 运算.058.Value",
+            "运算.058.Value -> 运算.059.Value",
+            "运算.050.Value -> 运算.060.Value",
+            "运算.059.Value -> 运算.060.Value",
+            "运算.042.Value -> 运算.061.Value",
+            "运算.060.Value -> 运算.061.Value",
+            "运算.024.Value -> 运算.062.Value",
+            "运算.061.Value -> 运算.062.Value",
+            "运算.062.Value -> 混合 (旧版).Factor",
+            "混合 (旧版).Color -> 混合 (旧版).001.Color1",
+            "运算.015.Value -> 混合 (旧版).001.Factor",
+            "混合 (旧版).001.Color -> 原理化 BSDF.Base Color",
+            "原理化 BSDF.BSDF -> 材质输出.Surface"
+          ]
+        },
+        {
+          "name": "材质.002",
+          "face_count": 92,
+          "center": [
+            -1.4577041864395142,
+            0.16845013201236725,
+            0.6786579489707947
+          ],
+          "nodes": [
+            {
+              "name": "原理化 BSDF",
+              "type": "BSDF_PRINCIPLED",
+              "inputs": {
+                "Base Color": [
+                  0.003003078978508711,
+                  0.003003078978508711,
+                  0.003003078978508711,
+                  1.0
+                ],
+                "Metallic": 0.0,
+                "Roughness": 0.5,
+                "IOR": 1.5,
+                "Alpha": 1.0,
+                "Thin Wall": false,
+                "Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Weight": 0.0,
+                "Diffuse Roughness": 0.0,
+                "Subsurface Weight": 0.0,
+                "Subsurface Radius": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ],
+                "Subsurface Scale": 0.004999999888241291,
+                "Subsurface IOR": 1.399999976158142,
+                "Subsurface Anisotropy": 0.0,
+                "Specular IOR Level": 0.5,
+                "Specular Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Anisotropic": 0.0,
+                "Anisotropic Rotation": 0.0,
+                "Tangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Transmission Weight": 0.0,
+                "Coat Weight": 0.0,
+                "Coat Roughness": 0.029999999329447746,
+                "Coat IOR": 1.5,
+                "Coat Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Coat Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Sheen Weight": 0.0,
+                "Sheen Roughness": 0.5,
+                "Sheen Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Color": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Strength": 0.0,
+                "Thin Film Thickness": 0.0,
+                "Thin Film IOR": 1.3300000429153442
+              }
+            },
+            {
+              "name": "材质输出",
+              "type": "OUTPUT_MATERIAL",
+              "inputs": {
+                "Displacement": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Thickness": 0.0
+              }
+            }
+          ],
+          "links": [
+            "原理化 BSDF.BSDF -> 材质输出.Surface"
+          ]
+        },
+        {
+          "name": "材质",
+          "face_count": 5952,
+          "center": [
+            -1.457704782485962,
+            0.10220716893672943,
+            0.7716286778450012
+          ],
+          "nodes": [
+            {
+              "name": "原理化 BSDF",
+              "type": "BSDF_PRINCIPLED",
+              "inputs": {
+                "Base Color": [
+                  0.30070972442626953,
+                  0.6043348908424377,
+                  0.060847774147987366,
+                  1.0
+                ],
+                "Metallic": 0.0727272778749466,
+                "Roughness": 0.5045454502105713,
+                "IOR": 1.5999999046325684,
+                "Alpha": 1.0,
+                "Thin Wall": false,
+                "Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Weight": 0.0,
+                "Diffuse Roughness": 0.0,
+                "Subsurface Weight": 0.0,
+                "Subsurface Radius": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ],
+                "Subsurface Scale": 0.004999999888241291,
+                "Subsurface IOR": 1.399999976158142,
+                "Subsurface Anisotropy": 0.0,
+                "Specular IOR Level": 0.5,
+                "Specular Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Anisotropic": 0.0,
+                "Anisotropic Rotation": 0.0,
+                "Tangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Transmission Weight": 0.0,
+                "Coat Weight": 0.0,
+                "Coat Roughness": 0.029999999329447746,
+                "Coat IOR": 1.5,
+                "Coat Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Coat Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Sheen Weight": 0.0,
+                "Sheen Roughness": 0.5,
+                "Sheen Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Color": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Strength": 0.0,
+                "Thin Film Thickness": 0.0,
+                "Thin Film IOR": 1.3300000429153442
+              }
+            },
+            {
+              "name": "材质输出",
+              "type": "OUTPUT_MATERIAL",
+              "inputs": {
+                "Displacement": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Thickness": 0.0
+              }
+            }
+          ],
+          "links": [
+            "原理化 BSDF.BSDF -> 材质输出.Surface"
+          ]
+        },
+        {
+          "name": "材质.001",
+          "face_count": 5952,
+          "center": [
+            -1.4570693969726562,
+            0.12610484659671783,
+            0.7721089720726013
+          ],
+          "nodes": [
+            {
+              "name": "原理化 BSDF",
+              "type": "BSDF_PRINCIPLED",
+              "inputs": {
+                "Base Color": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "Metallic": 0.09090909361839294,
+                "Roughness": 0.40909090638160706,
+                "IOR": 2.6999998092651367,
+                "Alpha": 1.0,
+                "Thin Wall": false,
+                "Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Weight": 0.0,
+                "Diffuse Roughness": 0.0,
+                "Subsurface Weight": 0.0,
+                "Subsurface Radius": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ],
+                "Subsurface Scale": 0.004999999888241291,
+                "Subsurface IOR": 1.399999976158142,
+                "Subsurface Anisotropy": 0.0,
+                "Specular IOR Level": 0.5,
+                "Specular Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Anisotropic": 0.0,
+                "Anisotropic Rotation": 0.0,
+                "Tangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Transmission Weight": 0.0,
+                "Coat Weight": 0.0,
+                "Coat Roughness": 0.029999999329447746,
+                "Coat IOR": 1.5,
+                "Coat Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Coat Normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Sheen Weight": 0.0,
+                "Sheen Roughness": 0.5,
+                "Sheen Tint": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Color": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "Emission Strength": 0.0,
+                "Thin Film Thickness": 0.0,
+                "Thin Film IOR": 1.3300000429153442
+              }
+            },
+            {
+              "name": "材质输出",
+              "type": "OUTPUT_MATERIAL",
+              "inputs": {
+                "Displacement": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "Thickness": 0.0
+              }
+            }
+          ],
+          "links": [
+            "原理化 BSDF.BSDF -> 材质输出.Surface"
+          ]
+        }
+      ],
+      "components": [
+        {
+          "count": 22105,
+          "center": [
+            -1.4576927423477173,
+            -0.0183942299336195,
+            -0.05392668768763542
+          ],
+          "bounds": [
+            [
+              -1.9409780502319336,
+              -0.9744303226470947
+            ],
+            [
+              -0.36542510986328125,
+              0.36153486371040344
+            ],
+            [
+              -0.9836906790733337,
+              0.8819102048873901
+            ]
+          ]
+        },
+        {
+          "count": 2978,
+          "center": [
+            -1.572147250175476,
+            0.10220710188150406,
+            0.7716285586357117
+          ],
+          "bounds": [
+            [
+              -1.6166000366210938,
+              -1.5269218683242798
+            ],
+            [
+              0.0569956973195076,
+              0.14741869270801544
+            ],
+            [
+              0.7241675853729248,
+              0.8188358545303345
+            ]
+          ]
+        },
+        {
+          "count": 2978,
+          "center": [
+            -1.5805912017822266,
+            0.1266581118106842,
+            0.7720997929573059
+          ],
+          "bounds": [
+            [
+              -1.6055701971054077,
+              -1.555620551109314
+            ],
+            [
+              0.10168325155973434,
+              0.15163294970989227
+            ],
+            [
+              0.7459349036216736,
+              0.7982792258262634
+            ]
+          ]
+        },
+        {
+          "count": 2978,
+          "center": [
+            -1.3432600498199463,
+            0.10220710188150406,
+            0.7716285586357117
+          ],
+          "bounds": [
+            [
+              -1.3884865045547485,
+              -1.2988083362579346
+            ],
+            [
+              0.0569956973195076,
+              0.14741869270801544
+            ],
+            [
+              0.7241675853729248,
+              0.8188358545303345
+            ]
+          ]
+        },
+        {
+          "count": 2978,
+          "center": [
+            -1.3335427045822144,
+            0.1255514919757843,
+            0.7720997929573059
+          ],
+          "bounds": [
+            [
+              -1.358520269393921,
+              -1.3085706233978271
+            ],
+            [
+              0.10057690739631653,
+              0.15052659809589386
+            ],
+            [
+              0.7459349036216736,
+              0.7982792258262634
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "center": [
+            -1.6198854446411133,
+            0.1023220419883728,
+            0.7803928852081299
+          ],
+          "bounds": [
+            [
+              -1.6198854446411133,
+              -1.6198854446411133
+            ],
+            [
+              0.1023220419883728,
+              0.1023220419883728
+            ],
+            [
+              0.7803928852081299,
+              0.7803928852081299
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "center": [
+            -1.295522928237915,
+            0.1023220419883728,
+            0.7803928852081299
+          ],
+          "bounds": [
+            [
+              -1.295522928237915,
+              -1.295522928237915
+            ],
+            [
+              0.1023220419883728,
+              0.1023220419883728
+            ],
+            [
+              0.7803928852081299,
+              0.7803928852081299
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "center": [
+            -1.295522928237915,
+            0.1023220419883728,
+            0.7803928852081299
+          ],
+          "bounds": [
+            [
+              -1.295522928237915,
+              -1.295522928237915
+            ],
+            [
+              0.1023220419883728,
+              0.1023220419883728
+            ],
+            [
+              0.7803928852081299,
+              0.7803928852081299
+            ]
+          ]
+        },
+        {
+          "count": 1,
+          "center": [
+            -1.6198854446411133,
+            0.1023220419883728,
+            0.7803928852081299
+          ],
+          "bounds": [
+            [
+              -1.6198854446411133,
+              -1.6198854446411133
+            ],
+            [
+              0.1023220419883728,
+              0.1023220419883728
+            ],
+            [
+              0.7803928852081299,
+              0.7803928852081299
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

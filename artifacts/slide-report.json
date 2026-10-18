@@ -1,0 +1,21 @@
+{
+  "source_sha256": "5182d0d10ddbe13b47dc2858fb8d844f3d52e2ae0c6e31397a0a2ecc35542dc5",
+  "stable_samples": [
+    {
+      "seconds": 0.2,
+      "scaled_top": 1.3208595275878907,
+      "scaled_depth": 2.387656593322754
+    },
+    {
+      "seconds": 0.4,
+      "scaled_top": 1.3208595275878907,
+      "scaled_depth": 2.387656593322754
+    },
+    {
+      "seconds": 0.65,
+      "scaled_top": 1.3208595275878907,
+      "scaled_depth": 2.387656593322754
+    }
+  ],
+  "clip_seconds": 0.85
+}
