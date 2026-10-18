@@ -115,8 +115,4 @@ npm test
 
 2026-10-18 动作衔接检查：71 项自动测试及 `npm run check` 通过。实际浏览器已检查滑铲接起跳、空中下铲、暂停/恢复及落地滑铲，并保存关键帧与可交互演示；真实模型的完整 336 帧动作链也经过 CPU 蒙皮顶点检查，详见 `artifacts/VALIDATION-action-chains.md`。这些检查不代表手机真机或实际帧率已验证。
 
-## 来源与署名
-
-原模型作者 **WeDai**：[bigdiu/naiwa-nailoong-blender-model](https://github.com/bigdiu/naiwa-nailoong-blender-model)。本项目保留来源与原仓库说明。作者将模型用于学习、练习用途，奶龙形象的版权归原版权方所有。
-
 体形、骨骼、动作、材质转换与网页代码为此次试玩新增。模型形体按参考图调整，并非原角色的精确复刻。
