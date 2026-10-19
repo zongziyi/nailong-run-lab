@@ -23,3 +23,32 @@
 @media(max-width:620px){.leaderboard-dialog{padding:22px 18px;max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}.board-heading h2{font-size:21px}.board-modes button{padding:10px}.board-row{gap:7px;padding:11px 8px;grid-template-columns:26px minmax(0,1fr) auto}.inspect-ui{bottom:calc(26px + env(safe-area-inset-bottom))}}
 @media(max-height:650px){.gameover-overlay{justify-content:flex-start;padding:28px 25px}.gameover-overlay .end-heart{margin-top:10px;font-size:30px}.gameover-overlay .final-coins{margin-bottom:9px}.gameover-overlay .restart-hint{margin-top:9px}.gameover-overlay .text-btn{margin-top:3px}.inspect-ui .leaderboard-link{padding:8px;margin-top:2px}.inspect-ui h2{margin:10px 0}.life-options span{padding:10px}}
 .gameover-overlay{justify-content:safe center}
+
+/* Reserve a compact header above the canvas so counters never cover the route. */
+.stage-header{position:absolute;inset:0 0 auto;z-index:7;pointer-events:none}
+.run-status{display:none}
+.stage.running{display:grid;grid-template-rows:auto minmax(0,1fr)}
+.stage.running .stage-header{position:relative;inset:auto;grid-row:1;display:grid;gap:4px;padding:6px 12px 4px;background:#102a31;border-bottom:1px solid #a9bf9b30}
+.stage.running .viewport{position:relative;inset:auto;grid-row:2;min-height:0;height:100%;width:100%}
+.stage.running .stage-top{position:static;min-height:44px;gap:8px}
+.stage.running .stage-label{padding:7px 9px;font-size:9px;letter-spacing:.5px}
+.stage.running .stage-actions{gap:6px}
+.stage.running .stage-actions .icon-btn{width:44px;height:44px;flex-shrink:0;touch-action:manipulation}
+.stage.running .music-toggle.muted:after{top:21px}
+.stage.running .run-hud{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:center}
+.stage.running .run-hud>div{min-height:28px;padding:0 3px;border:0;border-radius:0;background:none;backdrop-filter:none;text-align:center}
+.stage.running .heart-row{justify-content:center;gap:3px;font-size:14px}
+.stage.running .life-card small{margin-top:2px;font-size:8px;letter-spacing:1px}
+.stage.running .run-hud .distance-card{text-align:center}
+.stage.running .distance-card>small{margin-bottom:2px;font-size:8px;line-height:10px;letter-spacing:0}
+.stage.running .run-hud .distance-card b{display:block;font-size:14px!important;line-height:16px;letter-spacing:0;white-space:nowrap}
+.stage.running .distance-card em{font-size:9px;margin-left:2px}
+.stage.running .run-status{display:none;min-width:0;height:20px;line-height:20px}
+.stage.running .run-status:has(.run-notices>:not([hidden])){display:grid}
+.stage.running .run-caption{display:none}
+.stage.running .run-notices{position:static;grid-area:1/1;display:block;min-width:0}
+.stage.running .run-notices>p,.stage.running .run-notices>.protection{max-width:100%;height:20px;line-height:20px;margin:0;padding:0;border:0;border-radius:0;background:none;backdrop-filter:none;text-align:center;font-size:10px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage.running .protection{justify-content:center;gap:8px}
+/* One status line: approaching traffic, then damage, then protection. */
+.stage.running .run-notices>:not([hidden])~:not([hidden]){display:none}
+@media(max-width:620px){.stage.running .stage-header{padding-top:calc(6px + env(safe-area-inset-top))}}

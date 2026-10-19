@@ -155,7 +155,7 @@ function setMode(mode){
   preview.visible=!running;railway.visible=running;
   stage.classList.toggle('running',running);$('#inspect-ui').hidden=running;$('#run-ui').hidden=!running;$('#pause').hidden=!running;$('#model-tag').hidden=running;
   $('#life-mode').disabled=running;
-  $('#mode-label').textContent=running?`障碍挑战 · ${lifeModeLabel()}`:'角色观察';$('#view-model').classList.toggle('active',!running);
+  $('#mode-label').textContent=running?lifeModeLabel():'角色观察';$('#view-model').classList.toggle('active',!running);
   $('#run-hud').hidden=!running;
   scene.background=new THREE.Color(running?'#173442':'#eee6d4');scene.fog=running?new THREE.Fog('#173442',24,95):new THREE.Fog('#eee6d4',16,50);
   hemi.intensity=running?1.9:1.6;sun.intensity=running?2.3:2.5;rim.intensity=running?1.6:1.2;
