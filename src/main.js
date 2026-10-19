@@ -10,6 +10,7 @@ import {GameMusic} from './music.js';
 import {CoinRenderer} from './coin-renderer.js';
 import {CoinSound} from './coin-sound.js?v=mobile-audio-1';
 import {LeaderboardUI} from './leaderboard-ui.js';
+import {ViewportFrame} from './viewport-frame.js';
 
 const $=s=>document.querySelector(s);
 const stage=$('#stage'),viewport=$('#viewport');
@@ -133,8 +134,8 @@ const actor=new THREE.Group();scene.add(actor);
 const shield=new THREE.Mesh(new THREE.TorusGeometry(1.23,.026,8,72),
   new THREE.MeshBasicMaterial({color:'#f1dc85',transparent:true,opacity:.65,depthWrite:false}));
 shield.rotation.x=-Math.PI/2;shield.position.y=.09;shield.visible=false;actor.add(shield);
-function resize(){if(!renderer)return;const {width,height}=viewport.getBoundingClientRect();if(!width||!height)return;const oldFactor=Math.max(1.08,.56/camera.aspect);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();if(loaded&&runner.mode==='inspect'){const newFactor=Math.max(1.08,.56/camera.aspect);camera.position.sub(orbit.target).multiplyScalar(newFactor/oldFactor).add(orbit.target);orbit.update();}}
-new ResizeObserver(resize).observe(viewport);
+const viewportFrame=renderer?new ViewportFrame({renderer,camera,viewport,orbit,isInspect:()=>loaded&&runner.mode==='inspect'}):null;
+new ResizeObserver(()=>viewportFrame?.invalidate()).observe(viewport);
 function setAngle(angle='threequarter'){
   if(!orbit)return;
   const pos={front:[0,2.5,9.2],side:[9.2,2.5,0],back:[0,2.5,-9.2],threequarter:[4,2.7,8.3]}[angle];
@@ -155,6 +156,7 @@ function setMode(mode){
   cameraFollowHeight=0;touch=null;
   preview.visible=!running;railway.visible=running;
   stage.classList.toggle('running',running);$('#inspect-ui').hidden=running;$('#run-ui').hidden=!running;$('#pause').hidden=!running;$('#model-tag').hidden=running;
+  viewportFrame.invalidate();
   $('#life-mode').disabled=running;
   $('#mode-label').textContent=running?lifeModeLabel():'角色观察';$('#view-model').classList.toggle('active',!running);
   $('#run-hud').hidden=!running;
@@ -317,6 +319,6 @@ function animate(){
       syncUI();
     }else{animator.update(runner,dt);orbit.update();}
   }
-  renderer.render(scene,camera);
+  viewportFrame.render(scene);
 }
-resize();setAngle();load();animate();
+setAngle();load();animate();

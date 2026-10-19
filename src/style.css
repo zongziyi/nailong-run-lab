@@ -27,9 +27,9 @@
 /* Reserve a compact header above the canvas so counters never cover the route. */
 .stage-header{position:absolute;inset:0 0 auto;z-index:7;pointer-events:none}
 .run-status{display:none}
-.stage.running{display:grid;grid-template-rows:auto minmax(0,1fr)}
+.stage.running{display:grid;grid-template-rows:auto minmax(0,1fr);background:#173442}
 .stage.running .stage-header{position:relative;inset:auto;grid-row:1;display:grid;gap:4px;padding:6px 12px 4px;background:#102a31;border-bottom:1px solid #a9bf9b30}
-.stage.running .viewport{position:relative;inset:auto;grid-row:2;min-height:0;height:100%;width:100%}
+.stage.running .viewport{position:relative;inset:auto;grid-row:2;min-height:0;height:100%;width:100%;background:#173442}
 .stage.running .stage-top{position:static;min-height:44px;gap:8px}
 .stage.running .stage-label{padding:7px 9px;font-size:9px;letter-spacing:.5px}
 .stage.running .stage-actions{gap:6px}
@@ -43,8 +43,8 @@
 .stage.running .distance-card>small{margin-bottom:2px;font-size:8px;line-height:10px;letter-spacing:0}
 .stage.running .run-hud .distance-card b{display:block;font-size:14px!important;line-height:16px;letter-spacing:0;white-space:nowrap}
 .stage.running .distance-card em{font-size:9px;margin-left:2px}
-.stage.running .run-status{display:none;min-width:0;height:20px;line-height:20px}
-.stage.running .run-status:has(.run-notices>:not([hidden])){display:grid}
+/* Keep this row even when empty: showing a warning must never resize WebGL. */
+.stage.running .run-status{display:grid;min-width:0;height:20px;line-height:20px}
 .stage.running .run-caption{display:none}
 .stage.running .run-notices{position:static;grid-area:1/1;display:block;min-width:0}
 .stage.running .run-notices>p,.stage.running .run-notices>.protection{max-width:100%;height:20px;line-height:20px;margin:0;padding:0;border:0;border-radius:0;background:none;backdrop-filter:none;text-align:center;font-size:10px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
