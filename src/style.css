@@ -52,3 +52,8 @@
 /* One status line: approaching traffic, then damage, then protection. */
 .stage.running .run-notices>:not([hidden])~:not([hidden]){display:none}
 @media(max-width:620px){.stage.running .stage-header{padding-top:calc(6px + env(safe-area-inset-top))}}
+
+.speed-mode-hint{font-size:9px;color:#68765e;margin:7px 0 0;line-height:1.5}.board-rule{font-size:11px;color:#b4c5a4;line-height:1.6}.board-modes button{padding:10px 8px;font-size:11px}.board-modes [data-refresh]{white-space:nowrap}
+@media(max-height:650px){.inspect-ui{bottom:18px}.inspect-ui h2{margin:9px 0;font-size:17px}.life-mode{margin-bottom:9px}.life-mode legend{margin-bottom:5px}.life-options span{padding:8px}.speed-mode-hint{font-size:8px}.inspect-ui .leaderboard-link{padding:8px;margin:3px auto 0}.inspect-ui .primary{padding:13px 18px}.inspect-ui .angle-switch{margin-bottom:5px}}
+
+.board-modes button{flex:1;white-space:nowrap}.board-modes button small{display:block;font-size:9px;font-weight:400;margin-top:3px}.board-modes [data-refresh]{flex:0}

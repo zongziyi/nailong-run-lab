@@ -1,4 +1,4 @@
 [
   {"IndexName":"rank_one_life","MgoKeySchema":{"MgoIndexKeys":[{"Name":"best_1.distance","Direction":"-1"},{"Name":"best_1.at","Direction":"1"},{"Name":"player_code","Direction":"1"}],"MgoIsUnique":false}},
-  {"IndexName":"rank_three_lives","MgoKeySchema":{"MgoIndexKeys":[{"Name":"best_3.distance","Direction":"-1"},{"Name":"best_3.at","Direction":"1"},{"Name":"player_code","Direction":"1"}],"MgoIsUnique":false}}
+  {"IndexName":"rank_fast_one_life","MgoKeySchema":{"MgoIndexKeys":[{"Name":"best_fast_1.distance","Direction":"-1"},{"Name":"best_fast_1.at","Direction":"1"},{"Name":"player_code","Direction":"1"}],"MgoIsUnique":false}}
 ]

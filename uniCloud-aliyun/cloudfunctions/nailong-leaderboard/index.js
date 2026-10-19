@@ -12,7 +12,11 @@ function nameOf(value){
   if([...name].length<1||[...name].length>16||/[\u0000-\u001f\u007f-\u009f]/u.test(name))fail('昵称请填写 1–16 个字，不要包含控制字符');
   return name;
 }
-function modeOf(mode){if(mode!==1&&mode!==3)fail('生命模式无效');return `best_${mode}`;}
+function modeOf(mode,speedMode='normal'){
+  if(mode!==1)fail('仅一条命成绩可参与排行榜');
+  if(speedMode!=='normal'&&speedMode!=='fast')fail('速度模式无效');
+  return speedMode==='fast'?'best_fast_1':'best_1';
+}
 const documentOf=result=>Array.isArray(result.data)?result.data[0]:result.data;
 const publicProfile=player=>({nickname:player.nickname,player_code:player.player_code});
 
@@ -43,7 +47,7 @@ function createHandler({db,now=Date.now,allowedOrigins=ORIGINS}){
     }
   }
   async function board(body,token){
-    const field=modeOf(body.mode),offset=body.offset??0,limit=body.limit??20;
+    const field=modeOf(body.mode,body.speedMode),offset=body.offset??0,limit=body.limit??20;
     if(!Number.isSafeInteger(offset)||offset<0||!Number.isInteger(limit)||limit<1||limit>20)fail('分页参数无效');
     const result=await players().where({[`${field}.distance`]:db.command.gte(0)})
       .orderBy(`${field}.distance`,'desc').orderBy(`${field}.at`,'asc').orderBy('player_code','asc')
@@ -83,7 +87,7 @@ function createHandler({db,now=Date.now,allowedOrigins=ORIGINS}){
       if(!body||typeof body!=='object'||Array.isArray(body))fail('请求格式无效');
       const token=headers.authorization?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
       let data;
-      if(body.action==='health')data={service:'nailong-leaderboard',version:1,expectedSpaceId:SPACE_ID};
+      if(body.action==='health')data={service:'nailong-leaderboard',version:2,expectedSpaceId:SPACE_ID,speedModes:['normal','fast'],oneLifeOnly:true};
       else if(body.action==='register'){
         const newToken=crypto.randomBytes(32).toString('hex'),playerCode=crypto.randomUUID();
         await players().add({_id:idOf(newToken),player_code:playerCode,nickname:'',created_at:now()});
@@ -92,7 +96,7 @@ function createHandler({db,now=Date.now,allowedOrigins=ORIGINS}){
         const nickname=nameOf(body.nickname);
         data=await mutate(token,async(player,record)=>{await record.update({nickname});return {nickname,player_code:player.player_code};});
       }else if(body.action==='submit_score'){
-        const field=modeOf(body.mode),distance=body.distance;
+        const field=modeOf(body.mode,body.speedMode),distance=body.distance;
         if(!Number.isSafeInteger(distance)||distance<0)fail('成绩无效');
         data=await mutate(token,async(player,record)=>{
           if(!player.nickname)fail('请先保存昵称');

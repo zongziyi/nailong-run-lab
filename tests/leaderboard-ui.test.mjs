@@ -18,12 +18,12 @@ function setup(clientOverride){
   const calls=[];
   const state={enabled:true,nickname:'Runner',playerCode:'own-code',pending:{},statuses:{},persistent:true};
   const client=clientOverride??{enabled:true,nickname:'Runner',snapshot:()=>({...state}),flush:async()=>{},setName:async()=>{},recordRun:run=>calls.push({...run}),page:async()=>({entries:[],has_more:false,me:null})};
-  const ui=new LeaderboardUI({getMode:()=>1,client});return {ui,client,state,calls,dialog:ui.dialog};
+  const ui=new LeaderboardUI({getMode:()=>'normal',client});return {ui,client,state,calls,dialog:ui.dialog};
 }
 test('three entrypoints open the selected mode and close restores focus',async()=>{
   const {ui,dialog}=setup();const entries=[...document.querySelectorAll('[data-leaderboard-open]')];assert.equal(entries.length,3);
-  entries[0].click();await settle();assert.equal(ui.isOpen,true);assert.equal(ui.mode,1);
-  assert.equal(dialog.querySelector('[data-board-mode="1"]').getAttribute('aria-pressed'),'true');
+  entries[0].click();await settle();assert.equal(ui.isOpen,true);assert.equal(ui.mode,'normal');
+  assert.equal(dialog.querySelector('[data-board-mode="normal"]').getAttribute('aria-pressed'),'true');
   dialog.querySelector('[data-close]').click();assert.equal(ui.isOpen,false);assert.equal(document.activeElement,entries[0]);
 });
 test('server nicknames are rendered as text, same-name player codes stay distinct and self is highlighted',async()=>{
@@ -34,10 +34,10 @@ test('server nicknames are rendered as text, same-name player codes stay distinc
   assert.match(dialog.querySelector('[data-my-best]').textContent,/一条命.*123.*1/);
 });
 test('switching mode ignores an old response; continuation keeps global ranks',async()=>{
-  const {ui,client,dialog}=setup();const slow=deferred();client.page=mode=>mode===1?slow.promise:Promise.resolve({entries:[row('new-mode')],has_more:true,me:null});
-  ui.open();dialog.querySelector('[data-board-mode="3"]').click();await settle();
+  const {ui,client,dialog}=setup();const slow=deferred();client.page=mode=>mode==='normal'?slow.promise:Promise.resolve({entries:[row('new-mode')],has_more:true,me:null});
+  ui.open();dialog.querySelector('[data-board-mode="fast"]').click();await settle();
   slow.resolve({entries:[row('stale')],has_more:false,me:null});await settle();assert.match(dialog.querySelector('.board-player').title,/new-mode/);
-  client.page=async(mode,offset)=>{assert.equal(mode,3);assert.equal(offset,1);return {entries:[row('next-page','Next',21)],has_more:false,me:null};};
+  client.page=async(mode,offset)=>{assert.equal(mode,'fast');assert.equal(offset,1);return {entries:[row('next-page','Next',21)],has_more:false,me:null};};
   dialog.querySelector('[data-more]').click();await settle();assert.equal(dialog.querySelectorAll('.board-row').length,2);
   assert.equal(dialog.querySelectorAll('.board-rank')[1].textContent,'21');
 });
@@ -61,8 +61,17 @@ test('nickname can be entered and locally saved before cloud setup, then restore
 });
 test('gameover integration captures only the normal ending once and keeps Enter inside the dialog',async()=>{
   const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
-  assert.match(source,/if\(ended&&!displayedGameOver\)\{\s*leaderboardUI\.recordRun\(\{mode:runner\.maxLives,distance:Math\.floor\(runner\.distance\)\}/);
+  assert.match(source,/if\(ended&&!displayedGameOver\)\{\s*leaderboardUI\.recordRun\(\{mode:runner\.maxLives,speedMode:runner\.speedMode,distance:Math\.floor\(runner\.distance\)\}/);
   assert.match(source,/window\.addEventListener\('keydown',e=>\{\s*if\(leaderboardUI\.isOpen\)return;/);
   const {ui,calls}=setup();const run={mode:1,distance:120};ui.recordRun(run);run.distance=0;
   assert.deepEqual(calls,[{mode:1,distance:120}]);
+});
+
+
+test('three-life results never enter the client queue and asynchronous status changes preserve the explanation',()=>{
+  const {ui,calls,state}=setup();ui.recordRun({mode:3,speedMode:'fast',distance:900});
+  assert.equal(calls.length,0);assert.equal(document.querySelector('#leaderboard-result').textContent,'三条命不参与排行榜');
+  state.statuses.fast='旧成绩已同步';ui.client.onChange(state,'submitted');
+  assert.equal(document.querySelector('#leaderboard-result').textContent,'三条命不参与排行榜');
+  ui.recordRun({mode:1,speedMode:'fast',distance:100});assert.deepEqual(calls,[{mode:1,speedMode:'fast',distance:100}]);
 });

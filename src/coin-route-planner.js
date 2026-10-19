@@ -4,14 +4,16 @@ import {COINS,coinContact} from './coins.js';
 
 const order=commands=>commands.sort((a,b)=>a.time-b.time||(a.lane===undefined?1:-1));
 const eligible=o=>!o.hit&&o.parentId==null&&o.kind!=='oncoming'&&(o.kind!=='train'||o.hasRamp);
-const centerTime=o=>timeAtDistance(o.frontDistance+OBSTACLES[o.kind].length/2);
-const recovery=o=>o.kind==='train'?timeAtDistance(obstacleEnd(o))+.72:centerTime(o)+.52;
 
 // Each published detour returns to the committed ground corridor. Both ends of
 // the tiny remaining lateral interval are carried forward after a fork, so the
 // next detour is validated from either branch, using the real controller.
 export class CoinRoutePlanner {
-  constructor(simulate){this.simulate=simulate;this.clear();}
+  constructor(simulate){this.speedMode='normal';this.simulate=simulate;this.clear();}
+  timeAtDistance(d){return timeAtDistance(d,this.speedMode);}
+  passageWindow(o){return passageWindow(o,0,GAME.slidingDepth,this.speedMode);}
+  centerTime(o){return this.timeAtDistance(o.frontDistance+OBSTACLES[o.kind].length/2);}
+  recovery(o){return o.kind==='train'?this.timeAtDistance(obstacleEnd(o))+.72:this.centerTime(o)+.52;}
   clear(state=null){this.anchors=state?[state]:[];this.baseLane=0;this.seen=new Set();this.knownIds=new Set();this.commands=[];this.routes=[];this.nextId=1;this.version=-1;}
   laneAt(course,time){let lane=this.baseLane;for(const c of course.safeCommands)if(c.time<=time+1e-8)lane=c.lane;return lane;}
   baseline(course,end){return course.safeCommands.filter(c=>c.time>=this.anchors[0].elapsed-1e-8&&c.time<=end).map(c=>({...c}));}
@@ -22,20 +24,20 @@ export class CoinRoutePlanner {
   }
   template(course,targets,end){
     const start=this.anchors[0].elapsed,lead=targets[0].arrivalTime<20?.72:.52;
-    const entry=Math.max(start,passageWindow(targets[0]).start-lead),restore=Math.max(...targets.map(recovery));
+    const entry=Math.max(start,this.passageWindow(targets[0]).start-lead),restore=Math.max(...targets.map(o=>this.recovery(o)));
     const commands=this.baseline(course,end).filter(c=>c.time<entry-1e-8||c.time>restore+1e-8);
     const samples=[];
     for(const o of targets){
-      const enter=Math.max(entry,passageWindow(o).start-lead);
+      const enter=Math.max(entry,this.passageWindow(o).start-lead);
       commands.push({time:enter,lane:o.lane});
       const hazards=o.kind==='train'?course.active.filter(p=>p.parentId===o.id&&!p.hit):[o];
       for(const hazard of hazards){
-        const center=centerTime(hazard),jump=hazard.kind!=='overhead';
+        const center=this.centerTime(hazard),jump=hazard.kind!=='overhead';
         commands.push({time:center-(jump?.43:.42),action:jump?'jump':'slide'});
         for(let i=-2;i<=2;i++)samples.push({time:center+i*.12,obstacleId:hazard.id,supportId:hazard.parentId??null});
       }
       if(o.kind==='train'){
-        const a=timeAtDistance(o.frontDistance)+.08,b=timeAtDistance(obstacleEnd(o))-.12;
+        const a=this.timeAtDistance(o.frontDistance)+.08,b=this.timeAtDistance(obstacleEnd(o))-.12;
         const count=Math.min(12,Math.max(5,Math.ceil((b-a)/.22)));
         for(let i=0;i<count;i++)samples.push({time:a+(b-a)*i/(count-1),obstacleId:o.id,supportId:o.id});
       }
@@ -87,7 +89,7 @@ export class CoinRoutePlanner {
       const first=obstacles.find(o=>!this.seen.has(o.id));
       if(!first){if(horizon>start+.05)this.advanceBaseline(course,horizon);break;}
       const row=obstacles.filter(o=>o.rowId===first.rowId&&!this.seen.has(o.id));
-      const end=Math.min(...row.map(recovery))+.74;
+      const end=Math.min(...row.map(o=>this.recovery(o)))+.74;
       if(end>horizon){
         const approach=first.arrivalTime-(start<20?.78:.58);
         if(approach>start+.05)this.advanceBaseline(course,Math.min(horizon,approach));
@@ -97,13 +99,13 @@ export class CoinRoutePlanner {
       const draw=(first.rowId*.61803398875)%1,late=first.arrivalTime>=60,middle=first.arrivalTime>=20;
       const next=obstacles.find(o=>o.rowId!==first.rowId&&o.arrivalTime>first.arrivalTime+1&&o.arrivalTime<first.arrivalTime+2.3);
       const wantsCombo=middle&&draw<(late?.6:.35);
-      if(wantsCombo&&(!next||recovery(next)+.74>horizon)&&elapsed<start-.8)break;
-      const combo=wantsCombo&&next&&recovery(next)+.74<=horizon;
+      if(wantsCombo&&(!next||this.recovery(next)+.74>horizon)&&elapsed<start-.8)break;
+      const combo=wantsCombo&&next&&this.recovery(next)+.74<=horizon;
       const candidates=[];
       const rotated=[...row].sort((a,b)=>((a.lane+first.rowId)%3)-((b.lane+first.rowId)%3));
       for(const o of rotated){
-        const singleEnd=recovery(o)+.74;
-        if(combo&&Math.max(singleEnd,recovery(next)+.74)<=horizon)candidates.push({targets:[o,next],end:Math.max(singleEnd,recovery(next)+.74)});
+        const singleEnd=this.recovery(o)+.74;
+        if(combo&&Math.max(singleEnd,this.recovery(next)+.74)<=horizon)candidates.push({targets:[o,next],end:Math.max(singleEnd,this.recovery(next)+.74)});
         if(singleEnd<=horizon)candidates.push({targets:[o],end:singleEnd});
       }
       let primary=null,chosen=null;
@@ -135,7 +137,7 @@ export class CoinRoutePlanner {
     }
   }
   accepts(obstacles){
-    if(!this.anchors.length||obstacles.every(o=>this.knownIds.has(o.id)||o.hit||passageWindow(o).start>this.anchors[0].elapsed+.02))return true;
+    if(!this.anchors.length||obstacles.every(o=>this.knownIds.has(o.id)||o.hit||this.passageWindow(o).start>this.anchors[0].elapsed+.02))return true;
     return this.routes.every(route=>route.branches.every(branch=>branch.states.every(state=>
       this.simulate({state,obstacles,commands:branch.commands,end:route.end}).safe)));
   }

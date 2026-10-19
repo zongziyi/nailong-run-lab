@@ -8,6 +8,7 @@
     "nickname": {"bsonType": "string", "maxLength": 64},
     "created_at": {"bsonType": "long"},
     "best_1": {"bsonType": "object"},
+    "best_fast_1": {"bsonType": "object"},
     "best_3": {"bsonType": "object"}
   }
 }

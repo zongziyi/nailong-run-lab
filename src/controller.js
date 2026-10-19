@@ -1,4 +1,4 @@
-import {GAME,OBSTACLES,speedAt,distanceAt,gravity,jumpVelocity} from './game-config.js';
+import {GAME,OBSTACLES,speedAt,distanceAt,gravity,jumpVelocity,validateSpeedMode} from './game-config.js';
 import {ObstacleCourse,surfaceAt,surfaceHeight,bodyStart,obstacleEnd} from './obstacles.js';
 import {CoinCourse} from './coins.js';
 import {CoinRoutePlanner} from './coin-route-planner.js';
@@ -8,7 +8,7 @@ export class RunnerController {
     this.course=new ObstacleCourse(options);this.coins=new CoinCourse();
     this.coinPlanner=new CoinRoutePlanner(simulateRoute);
     this.course.validateCoins=obstacles=>this.coinPlanner.accepts(obstacles);
-    this.maxLives=GAME.maxLives;this.reset();
+    this.speedMode='normal';this.maxLives=GAME.maxLives;this.reset();
   }
   reset(){
     this.mode='inspect';this.paused=false;this.lane=0;this.x=0;this.y=0;this.lean=0;
@@ -16,17 +16,18 @@ export class RunnerController {
     this.verticalVelocity=0;this.grounded=true;this.supportId=null;this.supportType='ground';
     this.jumpSourceId=null;
     this.lives=this.maxLives;this.gameOver=false;this.protectedUntil=0;
-    this.lastDamageAt=-Infinity;this.lastDamageKind=null;this.damageSerial=0;this.course.clear();
-    this.coinCount=0;this.coinSerial=0;this.coinEvents=[];this.coins.clear();this.coinPlanner.clear();
+    this.lastDamageAt=-Infinity;this.lastDamageKind=null;this.damageSerial=0;this.course.speedMode=this.speedMode;this.course.planner.speedMode=this.speedMode;this.course.clear();
+    this.coinCount=0;this.coinSerial=0;this.coinEvents=[];this.coins.clear();this.coinPlanner.speedMode=this.speedMode;this.coinPlanner.clear();
   }
-  get speed(){return speedAt(this.elapsed);}
-  get distance(){return distanceAt(this.elapsed);}
+  distanceAt(t){return distanceAt(t,this.speedMode);}
+  get speed(){return speedAt(this.elapsed,this.speedMode);}
+  get distance(){return this.distanceAt(this.elapsed);}
   get invincibleRemaining(){return Math.max(0,this.protectedUntil-this.elapsed);}
   get hitFeedback(){return Math.max(0,1-(this.elapsed-this.lastDamageAt)/.3);}
   get lastDamageLabel(){return this.lastDamageKind?OBSTACLES[this.lastDamageKind].label:'';}
-  start({maxLives=this.maxLives}={}){
+  start({maxLives=this.maxLives,speedMode=this.speedMode}={}){
     if(maxLives!==1&&maxLives!==GAME.maxLives)throw new RangeError('生命模式只能选择一条命或三条命');
-    this.maxLives=maxLives;this.reset();this.mode='run';this.action='Run';this.course.begin();
+    validateSpeedMode(speedMode);this.speedMode=speedMode;this.maxLives=maxLives;this.reset();this.mode='run';this.action='Run';this.course.begin();
     this.coinPlanner.clear(this.simulationState());this.coinPlanner.extend(this.course,this.coins);
   }
   inspect(){this.reset();}
@@ -56,7 +57,7 @@ export class RunnerController {
   setAction(action,slideFromDive=false){
     this.action=action;this.actionTime=0;this.actionSerial++;this.slideFromDive=slideFromDive;
   }
-  collisionState(){return {elapsed:this.elapsed,distance:this.distance,x:this.x,y:this.y,action:this.action,
+  collisionState(){return {speedMode:this.speedMode,elapsed:this.elapsed,distance:this.distance,x:this.x,y:this.y,action:this.action,
     actionTime:this.actionTime,slideFromDive:this.slideFromDive,supportId:this.supportId,jumpSourceId:this.jumpSourceId,
     grounded:this.grounded,supportType:this.supportType,verticalVelocity:this.verticalVelocity};}
   simulationState(){return {...this.collisionState(),lane:this.lane,lean:this.lean,actionSerial:this.actionSerial};}
@@ -70,13 +71,13 @@ export class RunnerController {
   landingWithin(dt){
     if(this.grounded)return null;
     const xAt=t=>this.lane*GAME.laneSpacing+(this.x-this.lane*GAME.laneSpacing)*Math.exp(-13*t);
-    const source=this.action==='Jump'?this.course.surfaces(distanceAt(this.elapsed+dt),xAt(dt))
+    const source=this.action==='Jump'?this.course.surfaces(this.distanceAt(this.elapsed+dt),xAt(dt))
       .find(s=>s.id===this.jumpSourceId):null;
     const acceleration=gravity*(this.action==='Dive'?GAME.diveGravityScale:1);
     const velocity=this.jumpSourceId!==null&&!source?jumpVelocity-gravity*this.actionTime:this.verticalVelocity;
     const yAt=source?t=>{
       const age=Math.min(this.actionTime+t,GAME.jumpSeconds);
-      return surfaceHeight(source.obstacle,distanceAt(this.elapsed+t))+Math.max(0,jumpVelocity*age-.5*gravity*age*age);
+      return surfaceHeight(source.obstacle,this.distanceAt(this.elapsed+t))+Math.max(0,jumpVelocity*age-.5*gravity*age*age);
     }:t=>this.y+velocity*t-.5*acceleration*t*t;
     let landing=null;
     // Use feet relative to each top, including a slope rising faster than an
@@ -91,8 +92,8 @@ export class RunnerController {
     };
     crossing(()=>0,()=>null);
     for(const o of this.course.active)if(o.kind==='train'&&!o.hit){
-      crossing(t=>surfaceHeight(o,distanceAt(this.elapsed+t)),
-        t=>surfaceAt(o,distanceAt(this.elapsed+t),xAt(t))??undefined);
+      crossing(t=>surfaceHeight(o,this.distanceAt(this.elapsed+t)),
+        t=>surfaceAt(o,this.distanceAt(this.elapsed+t),xAt(t))??undefined);
     }
     return landing;
   }
@@ -108,9 +109,9 @@ export class RunnerController {
       // Split at longitudinal terrain boundaries as well as the small step.
       for(const o of this.course.active)if(o.kind==='train'&&!o.hit){
         for(const boundary of [o.frontDistance-GAME.playerDepth/2,o.frontDistance,bodyStart(o),obstacleEnd(o)+GAME.playerDepth/2]){
-          if(boundary>this.distance+1e-7&&boundary<distanceAt(this.elapsed+dt)-1e-7){
+          if(boundary>this.distance+1e-7&&boundary<this.distanceAt(this.elapsed+dt)-1e-7){
             let a=0,b=dt;
-            for(let i=0;i<30;i++){const m=(a+b)/2;if(distanceAt(this.elapsed+m)<boundary)a=m;else b=m;}
+            for(let i=0;i<30;i++){const m=(a+b)/2;if(this.distanceAt(this.elapsed+m)<boundary)a=m;else b=m;}
             dt=b;
           }
         }

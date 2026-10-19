@@ -36,11 +36,12 @@ export function createUniCloudTransport(config,{storage,storageKey,fetch:request
       try{
         let data;
         if(name==='set_runner_name')data=await call('set_name',{nickname:args.p_nickname});
-        else if(name==='submit_runner_score')data=await call('submit_score',{mode:args.p_mode,distance:args.p_distance});
+        else if(name==='submit_runner_score')data=await call('submit_score',{mode:args.p_mode,distance:args.p_distance,speedMode:args.p_speed_mode??'normal'});
         else throw new Error('未知排行榜操作');
         return {data};
       }catch(error){return {data:null,error};}
     },
-    getBoard:(mode,offset)=>call('board',{mode,offset,limit:20}),
+    capabilities:()=>call('health'),
+    getBoard:(speedMode,offset)=>call('board',{mode:1,speedMode,offset,limit:20}),
   };
 }

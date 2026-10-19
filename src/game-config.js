@@ -57,14 +57,36 @@ export const OBSTACLES = Object.freeze({
 
 export const SPAWN_WEIGHTS=Object.freeze({barrier:25,overhead:25,crate:25,train:15,oncoming:10});
 
-export const speedAt=t=>GAME.speed+GAME.accelerationGain*Math.log1p(Math.max(0,t)/GAME.accelerationTime);
-export const distanceAt=t=>{
+export const SPEED_MODES=Object.freeze(['normal','fast']);
+export const FAST=Object.freeze({initialSpeed:GAME.speed*1.5,maxSpeed:GAME.speed*10,rampSeconds:180});
+const fastAcceleration=(FAST.maxSpeed-FAST.initialSpeed)/FAST.rampSeconds;
+export function validateSpeedMode(mode){
+  if(!SPEED_MODES.includes(mode))throw new RangeError('速度模式只能选择普通或快速');
+  return mode;
+}
+export const speedAt=(t,speedMode='normal')=>{
+  validateSpeedMode(speedMode);t=Math.max(0,t);
+  return speedMode==='fast'?Math.min(FAST.maxSpeed,FAST.initialSpeed+fastAcceleration*t):
+    GAME.speed+GAME.accelerationGain*Math.log1p(t/GAME.accelerationTime);
+};
+export const distanceAt=(t,speedMode='normal')=>{
+  validateSpeedMode(speedMode);
   t=Math.max(0,t);
+  if(speedMode==='fast'){
+    const ramp=Math.min(t,FAST.rampSeconds);
+    return FAST.initialSpeed*ramp+.5*fastAcceleration*ramp*ramp+FAST.maxSpeed*Math.max(0,t-FAST.rampSeconds);
+  }
   return GAME.speed*t+GAME.accelerationGain*((t+GAME.accelerationTime)*Math.log1p(t/GAME.accelerationTime)-t);
 };
-export function timeAtDistance(distance){
+export function timeAtDistance(distance,speedMode='normal'){
+  validateSpeedMode(speedMode);
   if(!Number.isFinite(distance))return distance;
   if(distance<=0)return 0;
+  if(speedMode==='fast'){
+    const capDistance=distanceAt(FAST.rampSeconds,'fast');
+    return distance>=capDistance?FAST.rampSeconds+(distance-capDistance)/FAST.maxSpeed:
+      2*distance/(FAST.initialSpeed+Math.sqrt(FAST.initialSpeed**2+2*fastAcceleration*distance));
+  }
   let t=distance/GAME.speed;
   for(let i=0;i<12;i++)t=Math.max(0,t-(distanceAt(t)-distance)/speedAt(t));
   return t;

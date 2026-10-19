@@ -1,6 +1,6 @@
 # 启用共享排行榜：阿里云 uniCloud
 
-已选择的服务空间是 `mp-6e5e447f-183a-4a77-9646-2a9e9f68753d`，数据库结构、索引与 `nailong-leaderboard` 云函数已部署。控制台实际 HTTPS 地址已写入 `src/leaderboard-config.js`：
+已选择的服务空间是 `mp-6e5e447f-183a-4a77-9646-2a9e9f68753d`，数据库结构、快速榜索引与新版 `nailong-leaderboard` 云函数已于2026-10-19升级部署。控制台实际 HTTPS 地址已写入 `src/leaderboard-config.js`：
 
 ```text
 https://fc-mp-6e5e447f-183a-4a77-9646-2a9e9f68753d.next.bspapp.com/nailong-leaderboard
@@ -9,6 +9,24 @@ https://fc-mp-6e5e447f-183a-4a77-9646-2a9e9f68753d.next.bspapp.com/nailong-leade
 更换空间时，Space ID 不能代替云函数 HTTP 地址；需部署后从新空间的控制台复制实际地址。
 
 游戏继续放在 GitHub Pages。排行榜通过一个 uniCloud HTTP 云函数保存和读取共享数据；玩家不需要安装 HBuilderX，也不需要注册 DCloud 账号。HBuilderX 仅供开发者部署使用。这个方案不依赖 Supabase；国内实际可用性仍要用不经过代理的网络验收。GitHub Pages 的访问情况需要与排行榜接口分别检查。
+
+## 本次升级：普通榜与快速榜（仅一条命）
+
+本空间已完成以下云端升级。迁移到其他空间时仍须逐项执行；仓库测试通过不能替代线上验证。
+
+本次线上验收：健康接口返回version 2及两种速度；普通榜返回12条已有纪录，快速榜为空；三条命查询和提交返回400。未清空玩家集合，也未创建测试玩家或提交有效测试成绩。
+
+1. 保留现有玩家集合与身份。上传新版 Schema，保留普通纪录字段 `best_1`、历史字段 `best_3`，新增 `best_fast_1`；不导入空数据、不清空集合。
+2. 同步索引：普通索引保持 `best_1.distance DESC, best_1.at ASC, player_code ASC`；新增快速索引 `best_fast_1.distance DESC, best_fast_1.at ASC, player_code ASC`。旧三条命索引可保留，不影响新榜。
+3. 将仓库云函数复制到下文部署项目并上传。请求 `health` 应返回 `version: 2`、`speedModes: ["normal", "fast"]`、`oneLifeOnly: true`。确认成功后再发布网页。
+4. 在两个独立浏览器验证：旧普通一条命纪录保留；快速榜初始为空；同一身份两榜独立；三条命读榜和提交请求均被服务端拒绝。
+5. 发布网页，验证分页、个人纪录、离线暂存及重试。快速成绩只能进入快速榜。
+
+HTTP 的 `board` 和 `submit_score` 都传 `mode: 1`，另传 `speedMode: "normal" | "fast"`。缺少速度参数的旧一条命请求仍按普通处理，旧三条命请求返回400。快速字段不会从旧三条命字段迁移。
+
+网页继续使用原存储和认证键，保存格式升级为 `schemaVersion: 2`；旧 `pending[1]` 迁移到 `pending.normal`，旧 `pending[3]` 不再提交。新队列分别保留 `normal`、`fast`。服务能力未确认时不发送快速成绩、不读取伪快速榜；普通榜仍可使用。
+
+回退网页时保持新版云函数：旧一条命网页可继续使用普通榜。启用快速模式后不要将云函数回退到忽略速度参数的旧版，以免已打开的新版页面失去分榜保证。
 
 ## 1. 安装并登录 HBuilderX
 
@@ -26,7 +44,7 @@ https://fc-mp-6e5e447f-183a-4a77-9646-2a9e9f68753d.next.bspapp.com/nailong-leade
 
 | 文件 | 用途 |
 | --- | --- |
-| `database/nailong-players.schema.json` | 玩家、昵称和两个模式的最高纪录；禁止客户端直接读写集合 |
+| `database/nailong-players.schema.json` | 玩家、昵称、普通/快速两种速度的一条命最高纪录与旧三条命历史；禁止客户端直接读写集合 |
 | `database/nailong-players.index.json` | 两个榜的米数、达到时间及公开编号排序索引 |
 | `cloudfunctions/nailong-leaderboard/index.js` | 身份创建、昵称、最高分、分页及本人名次 |
 | `cloudfunctions/nailong-leaderboard/package.json` | 256MB 内存、15 秒超时、HTTP 路径 `/nailong-leaderboard` |
@@ -34,7 +52,7 @@ https://fc-mp-6e5e447f-183a-4a77-9646-2a9e9f68753d.next.bspapp.com/nailong-leade
 在部署项目的 `database` 目录右键选择 **初始化云数据库**，或使用云服务空间初始化向导，只选择本项目的数据库结构、索引和云函数。仅上传 Schema 不等于已同步索引。没有初始化成绩文件，不需要清空或覆盖已有数据。若索引没有同步，在 uniCloud 控制台的 `nailong-players` 集合中手动建立以下两个普通、非唯一的复合索引：
 
 1. `best_1.distance` 降序、`best_1.at` 升序、`player_code` 升序。
-2. `best_3.distance` 降序、`best_3.at` 升序、`player_code` 升序。
+2. `best_fast_1.distance` 降序、`best_fast_1.at` 升序、`player_code` 升序。
 
 右键 `cloudfunctions/nailong-leaderboard`，选择上传部署云函数。函数没有第三方 npm 依赖，使用平台提供的数据库 SDK 和 Node.js 内置加密库；运行环境需支持 Node.js 16 或更高版本。看到部署成功后再继续，不能以本地运行成功替代云端部署。
 
@@ -72,7 +90,7 @@ GitHub 仓库 **Settings → Secrets and variables → Actions → Variables** �
 
 1. 先在本机关闭代理，用普通窗口与另一浏览器或无痕窗口打开同一游戏地址；手机也用实际移动网络检查。
 2. 两个窗口分别正常跑完一局，保存不同昵称；双方刷新后应看到同一份榜单，自己的纪录有“我”的标记。保存相同昵称也不能互相覆盖。
-3. 同一身份提交更低或相同成绩，最高米数和达到时间不变；切换一条命、三条命，确认两个榜独立。
+3. 同一身份提交更低或相同成绩，最高米数和达到时间不变；分别用普通和快速模式的一条命跑完，确认两个榜独立；三条命结算不提交成绩。
 4. 刷新正常窗口，身份和纪录仍在；修改昵称后仍保留原纪录。
 5. 已命名玩家断网后正常结算，显示待同步；重新联网或打开排行榜后成功同步。快速重开时，上一局提交不能丢掉新局更高的待同步成绩。
 6. 分别检查电脑、窄屏和键盘操作：三个入口、模式切换、刷新、加载更多、Escape 关闭、关闭后焦点恢复，以及游戏原有跳跃、滑铲与暂停。

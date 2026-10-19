@@ -1,6 +1,6 @@
 import {LeaderboardClient} from './leaderboard.js';
 
-const modeLabel=mode=>mode===1?'一条命':'三条命';
+const modeLabel=mode=>mode==='fast'?'快速模式（一条命）':'普通模式（一条命）';
 const element=(tag,text,className)=>{
   const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;
 };
@@ -12,13 +12,13 @@ export class LeaderboardUI {
       this.renderState(state);
       if(type==='submitted'&&this.isOpen)void this.load();
     };
-    this.mode=3;this.request=0;this.offset=0;this.rows=[];this.lastRunMode=null;
+    this.mode='normal';this.lastRunEligible=true;this.request=0;this.offset=0;this.rows=[];this.lastRunMode=null;
     this.form=this.dialog.querySelector('form');this.nameInput=this.form.querySelector('input');
     document.querySelectorAll('[data-leaderboard-open]').forEach(button=>button.addEventListener('click',()=>this.open(button)));
     this.dialog.querySelector('[data-close]').addEventListener('click',()=>this.dialog.close());
     this.dialog.addEventListener('close',()=>{this.request++;this.opener?.focus({preventScroll:true});});
     this.dialog.querySelectorAll('[data-board-mode]').forEach(button=>button.addEventListener('click',()=>{
-      this.mode=Number(button.dataset.boardMode);void this.load();
+      this.mode=button.dataset.boardMode;void this.load();
     }));
     this.dialog.querySelector('[data-refresh]').addEventListener('click',()=>{void this.client.flush();void this.load();});
     this.dialog.querySelector('[data-more]').addEventListener('click',()=>void this.load(true));
@@ -33,7 +33,8 @@ export class LeaderboardUI {
     this.opener=opener;this.mode=this.getMode();this.nameInput.value=this.client.nickname||this.client.nicknameDraft||'';
     this.dialog.showModal();void this.load();void this.client.flush();
   }
-  recordRun(run){this.lastRunMode=run.mode;this.client.recordRun({...run});this.renderState(this.client.snapshot());}
+  recordRun(run){this.lastRunMode=run.speedMode??'normal';this.lastRunEligible=run.mode===1;
+    if(this.lastRunEligible)this.client.recordRun({...run});this.renderState(this.client.snapshot());}
   renderState(state){
     const enabled=state.enabled;
     const saveButton=this.form.querySelector('button');
@@ -45,9 +46,9 @@ export class LeaderboardUI {
     this.dialog.querySelector('[data-storage-note]').textContent=state.persistent?
       '身份保存在当前浏览器。换设备或清除浏览器数据会成为新玩家。':'当前浏览器无法保存身份；关闭页面后可能成为新玩家。';
     const final=document.querySelector('#leaderboard-result');
-    final.textContent=enabled?(state.statuses[this.lastRunMode]||'设置昵称，和大家比比最高米数。'):
+    final.textContent=!this.lastRunEligible?'三条命不参与排行榜':enabled?(state.statuses[this.lastRunMode]||'设置昵称，和大家比比最高米数。'):
       state.configIssue?'排行榜配置有误，暂时无法提交':'排行榜尚未启用';
-    this.dialog.querySelector('[data-sync-note]').textContent=[1,3].filter(mode=>state.pending[mode]!==undefined)
+    this.dialog.querySelector('[data-sync-note]').textContent=['normal','fast'].filter(mode=>state.pending[mode]!==undefined)
       .map(mode=>`${modeLabel(mode)}：${state.statuses[mode]||'纪录等待同步'}`).join('；');
   }
   async saveName(){
@@ -69,7 +70,7 @@ export class LeaderboardUI {
     const request=++this.request,mode=this.mode;
     const status=this.dialog.querySelector('[data-board-status]'),list=this.dialog.querySelector('[data-board-list]');
     const moreButton=this.dialog.querySelector('[data-more]');
-    this.dialog.querySelectorAll('[data-board-mode]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.boardMode)===mode)));
+    this.dialog.querySelectorAll('[data-board-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.boardMode===mode)));
     if(!more){this.rows=[];this.offset=0;list.replaceChildren();this.dialog.querySelector('[data-my-best]').textContent='';}
     moreButton.hidden=true;status.textContent='正在读取大家的最高纪录…';
     if(!this.client.enabled){
@@ -90,9 +91,9 @@ export class LeaderboardUI {
         me?`你还没有${modeLabel(mode)}纪录，跑完一局就能上榜。`:'还未参与排行，填写昵称后即可保存最高纪录。';
       status.textContent=this.rows.length?`按最高米数排名 · 同米数并列 · ${new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} 更新`:'还没有纪录，来成为第一个上榜的人吧。';
       moreButton.hidden=!result.has_more;
-    }catch{
+    }catch(error){
       if(request!==this.request||!this.isOpen)return;
-      status.textContent='排行榜暂时无法读取，请检查网络后点击刷新。';
+      status.textContent=error.code==='SPEED_MODES_UNAVAILABLE'?'快速榜服务待升级；快速成绩会暂存，升级后再同步。':'排行榜暂时无法读取，请检查网络后点击刷新。';
       // A failed continuation keeps the already fetched rows and can be retried.
       moreButton.hidden=!more;
     }

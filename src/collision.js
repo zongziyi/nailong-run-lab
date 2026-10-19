@@ -9,12 +9,12 @@ export const surfaceHeight=(o,distance)=>o.hasRamp?
   Math.max(0,Math.min(1,(distance-o.frontDistance)/GAME.rampLength))*OBSTACLES.train.top:OBSTACLES.train.top;
 
 // The same relative longitudinal position drives scheduling, rendering and sweeps.
-export function passageWindow(o,margin=0,depth=GAME.slidingDepth){
+export function passageWindow(o,margin=0,depth=GAME.slidingDepth,speedMode='normal'){
   const moving=o.motionSpeed??0;
   const solve=target=>{
-    if(!moving)return timeAtDistance(target);
-    let t=Math.max(0,timeAtDistance(Math.max(0,target)));
-    for(let i=0;i<12;i++)t=Math.max(0,t-(distanceAt(t)+moving*(t-(o.arrivalTime??0))-target)/(speedAt(t)+moving));
+    if(!moving)return timeAtDistance(target,speedMode);
+    let t=Math.max(0,timeAtDistance(Math.max(0,target),speedMode));
+    for(let i=0;i<12;i++)t=Math.max(0,t-(distanceAt(t,speedMode)+moving*(t-(o.arrivalTime??0))-target)/(speedAt(t,speedMode)+moving));
     return t;
   };
   return {start:solve(o.frontDistance-depth/2-margin),

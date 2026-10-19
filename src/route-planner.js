@@ -5,14 +5,14 @@ import {passageWindow} from './collision.js';
  * exponential lane sweep against occupied time slabs, with extra margin.
  * Committing one witness prefix prevents later rows from rewriting past turns. */
 export class RoutePlanner {
-  constructor(){this.clear();}
+  constructor({speedMode='normal'}={}){this.speedMode=speedMode;this.clear();}
   clear(){this.anchor={tick:0,lane:0,x:0,parent:null};}
   propose(obstacles,arrivalTime){
     const grid=GAME.routeGrid,commitTick=Math.floor((arrivalTime+1e-8)/grid);
     const occupied=obstacles.filter(o=>!o.hit&&(o.baseHeight??0)<GAME.standingHeight&&
       (o.baseHeight??0)+OBSTACLES[o.kind].top>0).map(o=>({lane:o.lane,
         half:(OBSTACLES[o.kind].width+GAME.playerWidth)/2+GAME.routeMargin,
-        ...passageWindow(o,GAME.routeMargin,GAME.playerDepth)}));
+        ...passageWindow(o,GAME.routeMargin,GAME.playerDepth,this.speedMode)}));
     const endTick=Math.ceil(Math.max(arrivalTime+GAME.rowSecondsMax,
       ...occupied.map(o=>o.end+GAME.routeChangeSeconds))/grid);
     const frames=Array.from({length:endTick-this.anchor.tick+1},()=>new Map());

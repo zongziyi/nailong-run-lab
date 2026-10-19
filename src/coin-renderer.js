@@ -13,10 +13,10 @@ export class CoinRenderer {
     this.pose=new THREE.Object3D();this.reset();
   }
   reset(){this.body.count=0;this.rim.count=0;this.flash.count=0;}
-  sync(course,distance,elapsed){
+  sync(course,distance,elapsed,lookAhead=180){
     let count=0,flashes=0;
     for(const coin of course.active){
-      const z=distance-coin.distance;if(z>2||z< -180)continue;
+      const z=distance-coin.distance;if(z>2||z< -lookAhead)continue;
       if(coin.collectedAt!==null){
         const age=(elapsed-coin.collectedAt)/COINS.flashSeconds;if(age<0||age>=1)continue;
         this.pose.position.set(coin.x,coin.y+age*.65,z);this.pose.rotation.set(age*3,age*5,Math.PI/4);

@@ -29,13 +29,13 @@ test('the shipped official UMD SDK creates an anonymous session and sends authen
     const client=new LeaderboardClient({config:{url:'https://project.example.test',publishableKey:'sb_publishable_test'},
       getStorage:()=>({getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)}),
       loadSDK:async()=>(...args)=>{sdk=dom.window.supabase.createClient(...args);return sdk;}});
-    client.recordRun({mode:3,distance:123.9});await client.setName('SDK test');const board=await client.page(3);
+    client.recordRun({mode:1,speedMode:'normal',distance:123.9});await client.setName('SDK test');const board=await client.page('normal');
     assert.equal(board.me.distance,123);assert.deepEqual(client.pending,{});
     assert.equal(calls.filter(call=>call.url.pathname==='/auth/v1/signup').length,1);
     const submit=calls.find(call=>call.url.pathname.endsWith('/submit_runner_score'));
     assert.equal(submit.headers.get('apikey'),'sb_publishable_test');
     assert.equal(submit.headers.get('authorization'),`Bearer ${token}`);
-    assert.deepEqual(submit.body,{p_mode:3,p_distance:123});
+    assert.deepEqual(submit.body,{p_mode:1,p_distance:123,p_speed_mode:'normal'});
     assert.ok([...storage.keys()].some(key=>key.endsWith(':auth')));
   }finally{sdk?.auth.stopAutoRefresh();dom.window.close();globalThis.fetch=originalFetch;}
 });

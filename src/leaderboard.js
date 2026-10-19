@@ -23,9 +23,9 @@ export function normalizeName(value){
   }
   return name;
 }
-function score(mode,distance){
-  if((mode!==1&&mode!==3)||!Number.isSafeInteger(distance)||distance<0)throw new Error('成绩或生命模式无效');
-  return {mode,distance};
+function score(mode,distance,speedMode='normal'){
+  if(mode!==1||!['normal','fast'].includes(speedMode)||!Number.isSafeInteger(distance)||distance<0)throw new Error('成绩或模式无效（仅一条命可上榜）');
+  return {mode,distance,speedMode};
 }
 let sdkPromise;
 export function loadSupabaseSDK(){
@@ -77,7 +77,9 @@ export class LeaderboardClient {
       const saved=JSON.parse(this.storage.getItem(this.key)||'null');
       if(saved&&(saved.ownerId===null||typeof saved.ownerId==='string')){
         this.ownerId=saved.ownerId;this.nickname=saved.nickname?normalizeName(saved.nickname):'';this.playerCode=saved.playerCode;
-        for(const mode of [1,3])if(Number.isSafeInteger(saved.pending?.[mode])&&saved.pending[mode]>=0)this.pending[mode]=saved.pending[mode];
+        const queue=saved.schemaVersion===2?saved.pending:{normal:saved.pending?.[1]};
+        for(const mode of ['normal','fast'])if(Number.isSafeInteger(queue?.[mode])&&queue[mode]>=0)this.pending[mode]=queue[mode];
+        this.save();
       }
     }catch{/* Corrupted or unavailable browser storage must never stop the game. */}
   }
@@ -85,7 +87,7 @@ export class LeaderboardClient {
     playerCode:this.playerCode,persistent:this.storage.persistent,pending:{...this.pending},statuses:{...this.statuses}};}
   emit(type='change'){try{this.onChange(this.snapshot(),type);}catch(error){console.error('Leaderboard UI:',error);}}
   save(){
-    this.storage.setItem(this.key,JSON.stringify({ownerId:this.ownerId,nickname:this.nickname,playerCode:this.playerCode,pending:this.pending}));
+    this.storage.setItem(this.key,JSON.stringify({schemaVersion:2,ownerId:this.ownerId,nickname:this.nickname,playerCode:this.playerCode,pending:this.pending}));
   }
   saveNameDraft(value){
     this.nicknameDraft=normalizeName(value);this.storage.setItem(this.draftKey,this.nicknameDraft);this.emit('draft');
@@ -138,12 +140,21 @@ export class LeaderboardClient {
     this.profileVersion++;this.nickname=profile.nickname;this.playerCode=profile.player_code;this.save();this.emit('profile');
     await this.flush();return profile;
   }
-  recordRun({mode,distance}){
-    const run=score(mode,Math.floor(distance));
+  recordRun({mode,distance,speedMode='normal'}){
+    const run=score(mode,Math.floor(distance),speedMode);
     if(!this.enabled)return;
-    this.pending[run.mode]=Math.max(this.pending[run.mode]??0,run.distance);
-    this.statuses[run.mode]=this.nickname?'纪录等待同步…':'填写昵称后可提交纪录';this.save();this.emit();
+    this.pending[run.speedMode]=Math.max(this.pending[run.speedMode]??0,run.distance);
+    this.statuses[run.speedMode]=this.nickname?'纪录等待同步…':'填写昵称后可提交纪录';this.save();this.emit();
     if(this.nickname)void this.flush();
+  }
+  async requireSpeedModes(){
+    if(this.speedModesSupported)return;
+    const client=await this.client();
+    const data=client.capabilities?await client.capabilities():await this.rpc('runner_leaderboard_capabilities',{});
+    if(!data?.speedModes?.includes('normal')||!data?.speedModes?.includes('fast')||data.oneLifeOnly!==true){
+      const error=new Error('排行榜服务待升级，快速成绩已暂存');error.code='SPEED_MODES_UNAVAILABLE';throw error;
+    }
+    this.speedModesSupported=true;
   }
   async flush(){
     if(!this.enabled||!this.nickname)return;
@@ -154,15 +165,17 @@ export class LeaderboardClient {
         const session=await this.identity();if(!session||!this.nickname)return;
         // Re-read the queue after every await so a newer run is never erased by an older response.
         while(Object.keys(this.pending).length){
-          const mode=Number(Object.keys(this.pending)[0]),distance=this.pending[mode];
+          const mode=this.pending.normal!==undefined?'normal':'fast',distance=this.pending[mode];
+          if(mode==='fast')await this.requireSpeedModes();
+          if(this.ownerId!==session.user.id){retryNewIdentity=true;return;}
           this.statuses[mode]='正在同步最高纪录…';this.emit();
-          const result=await this.rpc('submit_runner_score',{p_mode:mode,p_distance:distance});
+          const result=await this.rpc('submit_runner_score',{p_mode:1,p_distance:distance,p_speed_mode:mode});
           if(this.ownerId!==session.user.id){retryNewIdentity=true;return;}
           if(this.pending[mode]<=distance)delete this.pending[mode];
           this.statuses[mode]=`已同步 · 个人最高 ${result.distance} 米`;this.save();this.emit('submitted');
         }
-      }catch{
-        for(const mode of Object.keys(this.pending))this.statuses[mode]='尚未同步，已暂存；联网或打开排行榜后重试';
+      }catch(error){
+        for(const mode of Object.keys(this.pending))this.statuses[mode]=error.code==='SPEED_MODES_UNAVAILABLE'?error.message:'尚未同步，已暂存；联网或打开排行榜后重试';
         this.save();this.emit('sync-error');
       }
     })();
@@ -171,16 +184,17 @@ export class LeaderboardClient {
       if(retryNewIdentity&&this.nickname&&Object.keys(this.pending).length)void this.flush();
     }
   }
-  async page(mode,offset=0){
-    score(mode,0);
+  async page(mode='normal',offset=0){
+    score(1,0,mode);
+    if(mode==='fast')await this.requireSpeedModes();
     const session=await this.identity();
     const profileVersion=this.profileVersion;
     const client=await this.client();
     let page,me;
     if(client.getBoard){const result=await client.getBoard(mode,offset);({me,...page}=result);}
     else [page,me]=await Promise.all([
-        this.rpc('runner_leaderboard',{p_mode:mode,p_offset:offset,p_limit:20}),
-        session?this.rpc('runner_personal_best',{p_mode:mode}):Promise.resolve(null),
+        this.rpc('runner_leaderboard',{p_mode:1,p_speed_mode:mode,p_offset:offset,p_limit:20}),
+        session?this.rpc('runner_personal_best',{p_mode:1,p_speed_mode:mode}):Promise.resolve(null),
       ]);
     if(me&&profileVersion===this.profileVersion){this.nickname=me.nickname;this.playerCode=me.player_code;this.save();this.emit('profile');}
     return {...page,me};

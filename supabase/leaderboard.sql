@@ -13,7 +13,17 @@ create table if not exists public.runner_records (
   achieved_at timestamptz not null default clock_timestamp(),
   primary key (user_id,mode)
 );
-create index if not exists runner_records_ranking on public.runner_records(mode,distance desc,achieved_at,user_id);
+-- Existing life-mode records remain intact; old records are ordinary-speed records.
+alter table public.runner_records add column if not exists speed_mode text not null default 'normal'
+  check (speed_mode in ('normal','fast'));
+alter table public.runner_records drop constraint runner_records_pkey;
+alter table public.runner_records add primary key (user_id,mode,speed_mode);
+drop index if exists public.runner_records_ranking;
+create index runner_records_ranking on public.runner_records(mode,speed_mode,distance desc,achieved_at,user_id);
+-- Replace the old signatures rather than leaving a writable three-life RPC behind.
+drop function if exists public.submit_runner_score(smallint,bigint);
+drop function if exists public.runner_leaderboard(smallint,integer,integer);
+drop function if exists public.runner_personal_best(smallint);
 alter table public.runner_players enable row level security;
 alter table public.runner_records enable row level security;
 revoke all on public.runner_players,public.runner_records from public,anon,authenticated;
@@ -32,36 +42,36 @@ begin
   return jsonb_build_object('nickname',v_player.nickname,'player_code',v_player.player_code);
 end $$;
 
-create or replace function public.submit_runner_score(p_mode smallint,p_distance bigint)
+create or replace function public.submit_runner_score(p_mode smallint,p_distance bigint,p_speed_mode text default 'normal')
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare v_best bigint; v_improved boolean;
 begin
   if auth.uid() is null then raise exception 'Authentication required' using errcode='42501'; end if;
-  if p_mode is null or p_mode not in (1,3) or p_distance is null or p_distance not between 0 and 9007199254740991 then
+  if p_mode is null or p_mode<>1 or p_speed_mode is null or p_speed_mode not in ('normal','fast') or p_distance is null or p_distance not between 0 and 9007199254740991 then
     raise exception 'Invalid mode or distance' using errcode='22023';
   end if;
   if not exists(select 1 from public.runner_players where user_id=auth.uid()) then
     raise exception 'Choose a nickname first' using errcode='22023';
   end if;
-  insert into public.runner_records(user_id,mode,distance) values(auth.uid(),p_mode,p_distance)
-    on conflict(user_id,mode) do update set distance=excluded.distance,achieved_at=clock_timestamp()
+  insert into public.runner_records(user_id,mode,speed_mode,distance) values(auth.uid(),p_mode,p_speed_mode,p_distance)
+    on conflict(user_id,mode,speed_mode) do update set distance=excluded.distance,achieved_at=clock_timestamp()
       where excluded.distance>public.runner_records.distance
     returning distance into v_best;
   v_improved := found;
-  if not v_improved then select distance into v_best from public.runner_records where user_id=auth.uid() and mode=p_mode; end if;
+  if not v_improved then select distance into v_best from public.runner_records where user_id=auth.uid() and mode=p_mode and speed_mode=p_speed_mode; end if;
   return jsonb_build_object('distance',v_best,'improved',v_improved);
 end $$;
 
-create or replace function public.runner_leaderboard(p_mode smallint,p_offset integer default 0,p_limit integer default 20)
+create or replace function public.runner_leaderboard(p_mode smallint,p_offset integer default 0,p_limit integer default 20,p_speed_mode text default 'normal')
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
 declare v_entries jsonb; v_more boolean;
 begin
-  if p_mode is null or p_mode not in (1,3) or p_offset is null or p_offset<0 or p_limit is null or p_limit not between 1 and 20 then
+  if p_mode is null or p_mode<>1 or p_speed_mode is null or p_speed_mode not in ('normal','fast') or p_offset is null or p_offset<0 or p_limit is null or p_limit not between 1 and 20 then
     raise exception 'Invalid leaderboard request' using errcode='22023';
   end if;
   with ranked as (
     select rank() over(order by r.distance desc) as rank,p.nickname,p.player_code,r.distance,r.achieved_at
-    from public.runner_records r join public.runner_players p using(user_id) where r.mode=p_mode
+    from public.runner_records r join public.runner_players p using(user_id) where r.mode=p_mode and r.speed_mode=p_speed_mode
   ), page as (
     select * from ranked order by distance desc,achieved_at,player_code offset p_offset limit p_limit+1
   ), numbered as (
@@ -72,21 +82,27 @@ begin
   return jsonb_build_object('entries',v_entries,'has_more',v_more);
 end $$;
 
-create or replace function public.runner_personal_best(p_mode smallint)
+create or replace function public.runner_personal_best(p_mode smallint,p_speed_mode text default 'normal')
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
 declare v_result jsonb;
 begin
   if auth.uid() is null then raise exception 'Authentication required' using errcode='42501'; end if;
-  if p_mode is null or p_mode not in (1,3) then raise exception 'Invalid mode' using errcode='22023'; end if;
+  if p_mode is null or p_mode<>1 or p_speed_mode is null or p_speed_mode not in ('normal','fast') then raise exception 'Invalid mode' using errcode='22023'; end if;
   select jsonb_build_object('nickname',p.nickname,'player_code',p.player_code,'distance',r.distance,
-    'rank',case when r.distance is null then null else 1+(select count(*) from public.runner_records s where s.mode=p_mode and s.distance>r.distance) end)
-    into v_result from public.runner_players p left join public.runner_records r on r.user_id=p.user_id and r.mode=p_mode where p.user_id=auth.uid();
+    'rank',case when r.distance is null then null else 1+(select count(*) from public.runner_records s where s.mode=p_mode and s.speed_mode=p_speed_mode and s.distance>r.distance) end)
+    into v_result from public.runner_players p left join public.runner_records r on r.user_id=p.user_id and r.mode=p_mode and r.speed_mode=p_speed_mode where p.user_id=auth.uid();
   return v_result;
 end $$;
 
-revoke all on function public.set_runner_name(text),public.submit_runner_score(smallint,bigint),
-  public.runner_leaderboard(smallint,integer,integer),public.runner_personal_best(smallint) from public,anon,authenticated;
-grant execute on function public.runner_leaderboard(smallint,integer,integer) to anon,authenticated;
-grant execute on function public.set_runner_name(text),public.submit_runner_score(smallint,bigint),
-  public.runner_personal_best(smallint) to authenticated;
+revoke all on function public.set_runner_name(text),public.submit_runner_score(smallint,bigint,text),
+  public.runner_leaderboard(smallint,integer,integer,text),public.runner_personal_best(smallint,text) from public,anon,authenticated;
+grant execute on function public.runner_leaderboard(smallint,integer,integer,text) to anon,authenticated;
+grant execute on function public.set_runner_name(text),public.submit_runner_score(smallint,bigint,text),
+  public.runner_personal_best(smallint,text) to authenticated;
+create or replace function public.runner_leaderboard_capabilities()
+returns jsonb language sql stable as $$
+  select '{"speedModes":["normal","fast"],"oneLifeOnly":true}'::jsonb
+$$;
+revoke all on function public.runner_leaderboard_capabilities() from public;
+grant execute on function public.runner_leaderboard_capabilities() to anon,authenticated;
 commit;

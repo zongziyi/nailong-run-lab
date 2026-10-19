@@ -62,41 +62,41 @@ test('Space ID alone leaves the board disabled; actual HTTPS endpoint enables un
 test('single function authenticates opaque tokens, separates duplicate names and never exposes internal IDs',async()=>{
   const {request,register}=setup();const a=await register('奶龙'),b=await register('奶龙');
   assert.match(a.token,/^[a-f0-9]{64}$/);assert.notEqual(a.token,b.token);
-  assert.equal((await request('submit_score',{mode:3,distance:500},a.token)).statusCode,200);
-  await request('submit_score',{mode:3,distance:200},b.token);
-  const board=(await request('board',{mode:3},a.token)).json.data;
+  assert.equal((await request('submit_score',{mode:1,speedMode:'fast',distance:500},a.token)).statusCode,200);
+  await request('submit_score',{mode:1,speedMode:'fast',distance:200},b.token);
+  const board=(await request('board',{mode:1,speedMode:'fast'},a.token)).json.data;
   assert.equal(board.entries.length,2);assert.equal(board.me.distance,500);
   assert.deepEqual(Object.keys(board.entries[0]).sort(),['achieved_at','distance','nickname','player_code','rank']);
   assert.ok(!JSON.stringify(board).includes(a.token));assert.ok(!JSON.stringify(board).includes('_id'));
   await request('set_name',{nickname:'改名',userId:b.userId},a.token);
-  const renamed=(await request('board',{mode:3})).json.data;
+  const renamed=(await request('board',{mode:1,speedMode:'fast'})).json.data;
   assert.equal(renamed.entries[0].nickname,'改名');assert.equal(renamed.entries[1].nickname,'奶龙');
   assert.equal((await request('set_name',{nickname:'入侵'})).statusCode,401);
-  assert.equal((await request('submit_score',{mode:3,distance:999},'a'.repeat(64))).statusCode,401);
+  assert.equal((await request('submit_score',{mode:1,speedMode:'fast',distance:999},'a'.repeat(64))).statusCode,401);
 });
 test('transactional maximum is per mode; repeated/lower results keep the original achievement time',async()=>{
   const {db,request,register}=setup();const player=await register('鱼叉');
-  await request('submit_score',{mode:3,distance:100},player.token);
+  await request('submit_score',{mode:1,speedMode:'fast',distance:100},player.token);
   db.stats.conflicts=1;
-  const replies=await Promise.all([500,200,300].map(distance=>request('submit_score',{mode:3,distance},player.token)));
+  const replies=await Promise.all([500,200,300].map(distance=>request('submit_score',{mode:1,speedMode:'fast',distance},player.token)));
   assert.ok(replies.every(reply=>reply.statusCode===200));
-  const before=(await request('board',{mode:3})).json.data.entries[0];
-  await request('submit_score',{mode:3,distance:500},player.token);
-  await request('submit_score',{mode:1,distance:80},player.token);
-  const after=(await request('board',{mode:3})).json.data.entries[0];
+  const before=(await request('board',{mode:1,speedMode:'fast'})).json.data.entries[0];
+  await request('submit_score',{mode:1,speedMode:'fast',distance:500},player.token);
+  await request('submit_score',{mode:1,speedMode:'normal',distance:80},player.token);
+  const after=(await request('board',{mode:1,speedMode:'fast'})).json.data.entries[0];
   assert.equal(after.distance,500);assert.equal(after.achieved_at,before.achieved_at);
-  assert.equal((await request('board',{mode:1})).json.data.entries[0].distance,80);
+  assert.equal((await request('board',{mode:1,speedMode:'normal'})).json.data.entries[0].distance,80);
   assert.ok(db.stats.transactions>=6);
 });
 test('global competition rank continues across page boundaries including ties and personal best outside page',async()=>{
   const {request,register}=setup();let last;
-  for(let i=0;i<23;i++){last=await register(`玩家${i}`);await request('submit_score',{mode:3,distance:i<2?900:800-i},last.token);}
-  const first=(await request('board',{mode:3},last.token)).json.data;
+  for(let i=0;i<23;i++){last=await register(`玩家${i}`);await request('submit_score',{mode:1,speedMode:'fast',distance:i<2?900:800-i},last.token);}
+  const first=(await request('board',{mode:1,speedMode:'fast'},last.token)).json.data;
   assert.equal(first.entries.length,20);assert.equal(first.has_more,true);assert.equal(first.me.rank,23);
   assert.deepEqual(first.entries.slice(0,3).map(row=>row.rank),[1,1,3]);
-  const tiePage=(await request('board',{mode:3,offset:1,limit:1})).json.data;
+  const tiePage=(await request('board',{mode:1,speedMode:'fast',offset:1,limit:1})).json.data;
   assert.equal(tiePage.entries[0].rank,1);
-  const end=(await request('board',{mode:3,offset:20})).json.data;
+  const end=(await request('board',{mode:1,speedMode:'fast',offset:20})).json.data;
   assert.equal(end.entries[0].rank,21);assert.equal(end.has_more,false);
 });
 test('origin/method/body validation, preflight, malformed scores and internal error redaction',async()=>{
@@ -141,12 +141,12 @@ test('HTTP transport persists one browser identity, combines board and me, and c
   };
   const a=createUniCloudTransport(config,{storage,storageKey:'auth-a',fetch});
   assert.equal((await a.auth.getSession()).data.session,null);
-  await a.auth.signInAnonymously();await a.rpc('set_runner_name',{p_nickname:'玩家'});await a.rpc('submit_runner_score',{p_mode:3,p_distance:77});
+  await a.auth.signInAnonymously();await a.rpc('set_runner_name',{p_nickname:'玩家'});await a.rpc('submit_runner_score',{p_mode:1,p_speed_mode:'fast',p_distance:77});
   const reloaded=createUniCloudTransport(config,{storage,storageKey:'auth-a',fetch});
-  assert.ok((await reloaded.auth.getSession()).data.session);const board=await reloaded.getBoard(3,0);
+  assert.ok((await reloaded.auth.getSession()).data.session);const board=await reloaded.getBoard('fast',0);
   assert.equal(board.me.distance,77);assert.equal(calls.filter(call=>call.action==='register').length,1);
   const bad=createUniCloudTransport(config,{storage,storageKey:'invalid',fetch:async()=>new Response('{"ok":false,"error":"expired"}',{status:401})});
-  await assert.rejects(bad.getBoard(3,0),/expired/);
+  await assert.rejects(bad.getBoard('fast',0),/expired/);
 });
 test('real client uses uniCloud transport without Supabase SDK and preserves pending retries',async()=>{
   const {handler}=setup();const original=globalThis.fetch,values=new Map();let offline=false,loads=0;
@@ -156,9 +156,27 @@ test('real client uses uniCloud transport without Supabase SDK and preserves pen
   };
   try{
     const options={config,getStorage:()=>({getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)}),loadSDK:()=>{loads++;throw new Error('Not expected');}};
-    const a=new LeaderboardClient(options);a.recordRun({mode:3,distance:125.9});await a.setName('鱼叉');assert.equal(loads,0);
-    offline=true;a.recordRun({mode:3,distance:500});await a.flush();assert.equal(a.pending[3],500);
-    offline=false;const refreshed=new LeaderboardClient(options);await refreshed.flush();const board=await refreshed.page(3);
+    const a=new LeaderboardClient(options);a.recordRun({mode:1,speedMode:'fast',distance:125.9});await a.setName('鱼叉');assert.equal(loads,0);
+    offline=true;a.recordRun({mode:1,speedMode:'fast',distance:500});await a.flush();assert.equal(a.pending.fast,500);
+    offline=false;const refreshed=new LeaderboardClient(options);await refreshed.flush();const board=await refreshed.page('fast');
     assert.equal(board.me.distance,500);assert.deepEqual(refreshed.pending,{});assert.equal(loads,0);
   }finally{globalThis.fetch=original;}
+});
+
+
+test('old ordinary one-life records survive while fast scores, rankings and timestamps stay independent',async()=>{
+  const {db,request,register}=setup();const a=await register('Keep');
+  const key=(await import('node:crypto')).createHash('sha256').update(a.token).digest('hex');
+  await db.collection('nailong-players').doc(key).update({best_1:{distance:123,at:1000},best_3:{distance:999,at:900}});
+  assert.equal((await request('board',{mode:1})).json.data.entries[0].distance,123);
+  assert.equal((await request('board',{mode:1,speedMode:'fast'})).json.data.entries.length,0);
+  await request('submit_score',{mode:1,speedMode:'fast',distance:800},a.token);
+  assert.equal((await request('board',{mode:1})).json.data.entries[0].distance,123);
+  assert.equal((await request('board',{mode:1,speedMode:'fast'})).json.data.entries[0].distance,800);
+  for(const action of ['board','submit_score']){
+    assert.equal((await request(action,{mode:3,distance:100},a.token)).statusCode,400);
+    assert.equal((await request(action,{mode:1,speedMode:'invalid',distance:100},a.token)).statusCode,400);
+  }
+  assert.equal((await db.collection('nailong-players').doc(key).get()).data[0].best_3.distance,999);
+  const health=(await request('health')).json.data;assert.equal(health.oneLifeOnly,true);assert.deepEqual(health.speedModes,['normal','fast']);
 });

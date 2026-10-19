@@ -4,26 +4,30 @@ import {RoutePlanner} from './route-planner.js';
 export {frontAt,bodyStart,obstacleLength,obstacleEnd,surfaceHeight,surfaceAt,sweptContact,passageWindow} from './collision.js';
 
 export class ObstacleCourse {
-  constructor({random=Math.random}={}){
-    this.random=random;this.pool=Array.from({length:GAME.maxObstacles},()=>({}));this.active=[];this.planner=new RoutePlanner();this.clear();
+  constructor({random=Math.random,speedMode='normal'}={}){
+    this.speedMode=speedMode;this.random=random;this.pool=Array.from({length:GAME.maxObstacles},()=>({}));this.active=[];this.planner=new RoutePlanner({speedMode});this.clear();
   }
+  distanceAt(t){return distanceAt(t,this.speedMode);}
+  speedAt(t){return speedAt(t,this.speedMode);}
+  timeAtDistance(d){return timeAtDistance(d,this.speedMode);}
+  passageWindow(o,margin=0,depth=GAME.slidingDepth){return passageWindow(o,margin,depth,this.speedMode);}
   clear(){
     this.active.length=0;this.free=[...this.pool];this.nextId=1;this.nextRowId=1;this.hasGeneratedTrain=false;
-    this.nextArrivalTime=GAME.warmupSeconds;this.nextFrontDistance=distanceAt(this.nextArrivalTime)+GAME.slidingDepth/2;
+    this.nextArrivalTime=GAME.warmupSeconds;this.nextFrontDistance=this.distanceAt(this.nextArrivalTime)+GAME.slidingDepth/2;
     this.lastOncomingTime=-Infinity;this.safeCommands=[];this.planner.clear();
     this.generationStats={attempts:0,fallbacks:0,skipped:0,groups:0,doubles:0};
   }
   begin(){this.clear();this.fillAhead(0,0);}
   record(kind,lane,arrivalTime){
     return {id:0,rowId:this.nextRowId,kind,lane,arrivalTime,
-      frontDistance:distanceAt(arrivalTime)+GAME.slidingDepth/2,hasRamp:false,
+      frontDistance:this.distanceAt(arrivalTime)+GAME.slidingDepth/2,hasRamp:false,
       motionSpeed:kind==='oncoming'?GAME.oncomingSpeed:0,baseHeight:0,parentId:null,hit:false,hitAt:Infinity};
   }
   fitsLane(candidate){
-    const window=passageWindow(candidate);
+    const window=this.passageWindow(candidate);
     return this.active.every(o=>{
       if(o.parentId!=null||o.lane!==candidate.lane)return true;
-      const prior=passageWindow(o);
+      const prior=this.passageWindow(o);
       return window.start>=prior.end+GAME.exitReactionSeconds-1e-8;
     });
   }
@@ -53,22 +57,22 @@ export class ObstacleCourse {
   }
   roofObstacles(parent){
     if(this.random()>=GAME.roofProbability)return;
-    const body=bodyStart(parent),crestTime=timeAtDistance(body);
-    let front=body+Math.max(4,speedAt(crestTime)*.35);
+    const body=bodyStart(parent),crestTime=this.timeAtDistance(body);
+    let front=body+Math.max(4,this.speedAt(crestTime)*.35);
     const count=this.random()<.5?1:2;
     for(let i=0;i<count&&this.free.length;i++){
       const kind=this.random()<.5?'barrier':'overhead',spec=OBSTACLES[kind];
       if(front+spec.length>obstacleEnd(parent)-2+1e-8)break;
-      const child=this.record(kind,parent.lane,timeAtDistance(front-GAME.slidingDepth/2));
+      const child=this.record(kind,parent.lane,this.timeAtDistance(front-GAME.slidingDepth/2));
       Object.assign(child,{frontDistance:front,baseHeight:OBSTACLES.train.top,parentId:parent.id});
       if(!this.validateCoins||this.validateCoins([...this.active,child]))this.allocate(child);
-      front=distanceAt(timeAtDistance(front)+GAME.roofGapSeconds);
+      front=this.distanceAt(this.timeAtDistance(front)+GAME.roofGapSeconds);
     }
   }
-  fillAhead(distance,elapsed=timeAtDistance(distance)){
+  fillAhead(distance,elapsed=this.timeAtDistance(distance)){
     // Complete coin detours (especially a train roof and its exit) need the
     // following rows known before any of their coins are made visible.
-    const horizon=Math.max(distance+GAME.lookAhead,distanceAt(elapsed+GAME.coinLookAheadSeconds));
+    const horizon=Math.max(distance+GAME.lookAhead,this.distanceAt(elapsed+GAME.coinLookAheadSeconds));
     while(this.nextFrontDistance<=horizon&&this.free.length>=2){
       const time=this.nextArrivalTime;let candidates=null,proposal=null;
       for(let attempt=0;attempt<GAME.generationAttempts;attempt++){
@@ -97,7 +101,7 @@ export class ObstacleCourse {
         this.generationStats.groups++;if(candidates.length===2)this.generationStats.doubles++;
       }else this.generationStats.skipped++;
       this.nextRowId++;this.nextArrivalTime+=GAME.rowSecondsMin+this.random()*(GAME.rowSecondsMax-GAME.rowSecondsMin);
-      this.nextFrontDistance=distanceAt(this.nextArrivalTime)+GAME.slidingDepth/2;
+      this.nextFrontDistance=this.distanceAt(this.nextArrivalTime)+GAME.slidingDepth/2;
     }
   }
   surfaces(distance,x){return this.active.map(o=>surfaceAt(o,distance,x)).filter(Boolean).sort((a,b)=>b.height-a.height);}
@@ -112,10 +116,10 @@ export class ObstacleCourse {
   }
   warnings(elapsed){
     return this.active.filter(o=>o.kind==='oncoming'&&!o.hit).map(o=>{
-      const window=passageWindow(o);return {id:o.id,lane:o.lane,eta:Math.max(0,window.start-elapsed),end:window.end};
+      const window=this.passageWindow(o);return {id:o.id,lane:o.lane,eta:Math.max(0,window.start-elapsed),end:window.end};
     }).filter(w=>w.eta<=GAME.warningSeconds+1e-8&&w.end>=elapsed).sort((a,b)=>a.eta-b.eta);
   }
-  recycle(distance,elapsed=timeAtDistance(distance)){
+  recycle(distance,elapsed=this.timeAtDistance(distance)){
     let write=0;
     for(const o of this.active){
       if(distance>obstacleEnd(o,elapsed)+GAME.recycleBehind)this.free.push(o);else this.active[write++]=o;

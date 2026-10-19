@@ -17,3 +17,10 @@ test('coins and flashes share a fixed instance pool; pause freezes animation and
   assert.deepEqual([visual.body.geometry,visual.rim.geometry,visual.flash.geometry],geometries);
   assert.equal(visual.body.instanceMatrix.count,COINS.capacity);visual.reset();assert.equal(visual.body.count,0);
 });
+
+
+test('fast visibility can show coins beyond the ordinary 180 metre cutoff',()=>{
+  const visual=new CoinRenderer(new THREE.Group()),course=new CoinCourse();course.add([{x:0,y:1,distance:400}]);
+  visual.sync(course,0,1);assert.equal(visual.body.count,0);
+  visual.sync(course,0,1,686.4);assert.equal(visual.body.count,1);
+});

@@ -5,7 +5,7 @@ import {RunnerController} from './controller.js';
 import {RunnerAnimation} from './runner-animation.js';
 import {GAME} from './game-config.js';
 import {ObstacleRenderer} from './obstacle-renderer.js';
-import {bodyStart,obstacleEnd,frontAt,passageWindow} from './obstacles.js';
+import {bodyStart,obstacleEnd,frontAt} from './obstacles.js';
 import {GameMusic} from './music.js';
 import {CoinRenderer} from './coin-renderer.js';
 import {CoinSound} from './coin-sound.js?v=mobile-audio-1';
@@ -37,9 +37,13 @@ syncCoinSoundButton();
 // A fresh page always defaults to one life, including restored form state.
 const lifeModeInputs=[...document.querySelectorAll('input[name="life-mode"]')];
 lifeModeInputs.forEach(input=>{input.checked=input.defaultChecked;});
+const speedModeInputs=[...document.querySelectorAll('input[name="speed-mode"]')];
+speedModeInputs.forEach(input=>{input.checked=input.defaultChecked;});
+const selectedSpeedMode=()=>speedModeInputs.find(input=>input.checked).value;
+const speedModeLabel=()=>runner.speedMode==='fast'?'快速':'普通';
 const lifeModeLabel=()=>runner.maxLives===1?'一条命':'三条命';
 const leaderboardUI=new LeaderboardUI({getMode:()=>runner.mode==='inspect'?
-  Number(lifeModeInputs.find(input=>input.checked).value):runner.maxLives});
+  selectedSpeedMode():runner.speedMode});
 const labels={Idle:'元气待机',Run:'奔跑中',Jump:'腾空中',Slide:'滑铲！',Dive:'下铲中！'};
 let renderer, model, animator, loaded=false;
 let displayedLives=-1,displayedGameOver=false;
@@ -148,7 +152,8 @@ function setMode(mode){
   const running=mode==='run';
   if(running){
     const maxLives=runner.mode==='inspect'?Number(lifeModeInputs.find(input=>input.checked).value):runner.maxLives;
-    runner.start({maxLives});
+    const speedMode=runner.mode==='inspect'?selectedSpeedMode():runner.speedMode;
+    runner.start({maxLives,speedMode});
   }else runner.inspect();
   obstacleVisuals.reset();shield.visible=false;displayedLives=-1;displayedGameOver=false;
   coinVisuals.reset();coinSound.stop();
@@ -157,8 +162,8 @@ function setMode(mode){
   preview.visible=!running;railway.visible=running;
   stage.classList.toggle('running',running);$('#inspect-ui').hidden=running;$('#run-ui').hidden=!running;$('#pause').hidden=!running;$('#model-tag').hidden=running;
   viewportFrame.invalidate();
-  $('#life-mode').disabled=running;
-  $('#mode-label').textContent=running?lifeModeLabel():'角色观察';$('#view-model').classList.toggle('active',!running);
+  $('#life-mode').disabled=running;$('#speed-mode').disabled=running;
+  $('#mode-label').textContent=running?`${speedModeLabel()} · ${lifeModeLabel()}`:'角色观察';$('#view-model').classList.toggle('active',!running);
   $('#run-hud').hidden=!running;
   scene.background=new THREE.Color(running?'#173442':'#eee6d4');scene.fog=running?new THREE.Fog('#173442',24,95):new THREE.Fog('#eee6d4',16,50);
   hemi.intensity=running?1.9:1.6;sun.intensity=running?2.3:2.5;rim.intensity=running?1.6:1.2;
@@ -207,7 +212,7 @@ function syncUI(){
   if(hurt)setText('#hit-message',`撞到${runner.lastDamageLabel}，剩余 ${runner.lives} 条命`);
   stage.classList.toggle('hurt',runner.hitFeedback>0&&!ended);
   if(ended&&!displayedGameOver){
-    leaderboardUI.recordRun({mode:runner.maxLives,distance:Math.floor(runner.distance)});
+    leaderboardUI.recordRun({mode:runner.maxLives,speedMode:runner.speedMode,distance:Math.floor(runner.distance)});
     $('#restart').focus({preventScroll:true});
   }
   displayedGameOver=ended;
@@ -272,7 +277,7 @@ const autoPause=()=>{touch=null;runner.pause();syncUI();};
 window.addEventListener('blur',autoPause);document.addEventListener('visibilitychange',()=>{if(document.hidden)autoPause();});
 // A read-only snapshot makes QA reproducible without mutating gameplay from the console.
 window.nailongDemo={snapshot:()=>({loaded,mode:runner.mode,paused:runner.paused,lane:runner.lane,x:runner.x,y:runner.y,
-  action:runner.action,elapsed:runner.elapsed,distance:runner.distance,lives:runner.lives,maxLives:runner.maxLives,gameOver:runner.gameOver,
+  action:runner.action,elapsed:runner.elapsed,distance:runner.distance,lives:runner.lives,maxLives:runner.maxLives,speedMode:runner.speedMode,gameOver:runner.gameOver,
   speed:runner.speed,verticalVelocity:runner.verticalVelocity,grounded:runner.grounded,supportType:runner.supportType,supportId:runner.supportId,
   jumpSourceId:runner.jumpSourceId,actionTime:runner.actionTime,actionSerial:runner.actionSerial,slideFromDive:runner.slideFromDive,
   invincibleRemaining:runner.invincibleRemaining,damageSerial:runner.damageSerial,
@@ -282,7 +287,7 @@ window.nailongDemo={snapshot:()=>({loaded,mode:runner.mode,paused:runner.paused,
   coinRoutes:runner.coinPlanner.routes.map(r=>({id:r.id,start:r.start,end:r.end,branches:r.branches.map(b=>({commands:b.commands.map(c=>({...c})),points:b.points.map(p=>({...p}))}))})),
   obstacles:runner.course.active.map(o=>({id:o.id,kind:o.kind,lane:o.lane,frontDistance:o.frontDistance,hasRamp:o.hasRamp,
     currentFrontDistance:frontAt(o,runner.elapsed),arrivalTime:o.arrivalTime,motionSpeed:o.motionSpeed,
-    baseHeight:o.baseHeight,parentId:o.parentId,eta:passageWindow(o).start-runner.elapsed,
+    baseHeight:o.baseHeight,parentId:o.parentId,eta:runner.course.passageWindow(o).start-runner.elapsed,
     bodyStartDistance:bodyStart(o,runner.elapsed),endDistance:obstacleEnd(o,runner.elapsed),hit:o.hit})),
   trafficWarnings:runner.course.warnings(runner.elapsed).map(w=>({...w})),
   routeCommands:runner.course.safeCommands.map(c=>({...c})),
@@ -310,7 +315,7 @@ function animate(){
       scenery.forEach((g,i)=>g.position.z=((distance-i*14*stretch+110*stretch)%(126*stretch)+126*stretch)%(126*stretch)-110*stretch);
       trains.forEach(({group,base})=>group.position.z=((distance+base+115)%145+145)%145-115);
       obstacleVisuals.sync(runner.course,distance,runner.elapsed);
-      coinVisuals.sync(runner.coins,distance,runner.elapsed);
+      coinVisuals.sync(runner.coins,distance,runner.elapsed,runner.speedMode==='fast'?Math.max(180,runner.speed*6.5):180);
       const incoming=runner.gameOver?[]:runner.course.warnings(runner.elapsed);
       trafficArrows.forEach(a=>{a.group.visible=incoming.some(w=>w.lane===a.lane);a.paint.opacity=.7+.25*Math.sin(runner.elapsed*9);});
       shield.visible=runner.invincibleRemaining>0&&!runner.gameOver;
