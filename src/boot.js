@@ -33,5 +33,5 @@
   window.addEventListener('unhandledrejection',event=>fail(`加载出错：${event.reason?.message||String(event.reason)}。`,event.reason));
   timer=setTimeout(()=>fail('加载超过 30 秒。请检查网络连接，再点击重新加载；若仍失败，页面会显示具体错误。'),30000);
   loader.querySelector('small').textContent='正在启动 3D 场景…';
-  import('./main.js').catch(error=>fail(`游戏脚本未能启动：${error.message}。请检查网络连接并刷新页面后重试。`,error));
+  import('./main.js?v=mobile-audio-1').catch(error=>fail(`游戏脚本未能启动：${error.message}。请检查网络连接并刷新页面后重试。`,error));
 })();

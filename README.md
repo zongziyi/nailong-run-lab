@@ -105,6 +105,8 @@
 & '.\.tools\blender-5.2.2-windows-x64\blender.exe' --background --factory-startup --disable-autoexec --python-exit-code 1 --python tools/extract_laugh_audio.py -- --input '你的视频路径.mp4'
 ```
 
+手机端的短笑会在页面加载时主动获取，在开始/继续手势中借用金币声的 AudioContext 解码并缓存，触发时直接播放 AudioBuffer，避免每次等待 HTML 音频播放器缓冲。iPhone 的 `interrupted` 和 `suspended` 状态均在后续有效手势中尝试恢复；网络或解码尚未就绪时只保留当前有效动作，暂停、重开及过期动作不补播。无法使用 Web Audio 时保留媒体播放器回退。移动端回归记录见 `artifacts/VALIDATION-laugh-mobile.md`。
+
 本次自动测试和桌面 / 手机尺寸浏览器检查见 [artifacts/VALIDATION-coins.md](artifacts/VALIDATION-coins.md)。
 
 ## 共享最高米数排行榜

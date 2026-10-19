@@ -8,7 +8,7 @@ import {ObstacleRenderer} from './obstacle-renderer.js';
 import {bodyStart,obstacleEnd,frontAt,passageWindow} from './obstacles.js';
 import {GameMusic} from './music.js';
 import {CoinRenderer} from './coin-renderer.js';
-import {CoinSound} from './coin-sound.js';
+import {CoinSound} from './coin-sound.js?v=mobile-audio-1';
 import {LeaderboardUI} from './leaderboard-ui.js';
 
 const $=s=>document.querySelector(s);

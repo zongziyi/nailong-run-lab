@@ -1,21 +1,58 @@
 const MUTE_KEY='nailong-run.coin-sound-muted';
 
 export class CoinSound {
-  constructor({createContext=()=>new (globalThis.AudioContext||globalThis.webkitAudioContext)(),getStorage=()=>globalThis.localStorage,onChange=()=>{},laughAudio=null}={}){
+  constructor({createContext=()=>new (globalThis.AudioContext||globalThis.webkitAudioContext)(),getStorage=()=>globalThis.localStorage,onChange=()=>{},laughAudio=null,
+    loadAudio=async url=>{const response=await fetch(url);if(!response.ok)throw Error(`Audio HTTP ${response.status}`);return response.arrayBuffer();}}={}){
     this.createContext=createContext;this.getStorage=getStorage;this.onChange=onChange;
     this.context=null;this.voices=new Set();this.active=false;this.issue=null;this.version=0;this.played=0;
     try{this.muted=getStorage()?.getItem(MUTE_KEY)==='true';}catch{this.muted=false;}
     this.laughAudio=laughAudio;this.laughVersion=0;this.laughRequested=false;this.laughStarted=false;
     this.laughPending=false;this.laughIssue=null;this.laughPlayed=0;this.lastLaughSerial=null;
+    this.loadAudio=loadAudio;this.laughUrl=laughAudio?.currentSrc||laughAudio?.src;
+    this.laughBytes=null;this.laughBuffer=null;this.laughFetch=null;this.laughDecode=null;this.laughBufferFailed=false;this.laughVoice=null;
     if(laughAudio){
       laughAudio.preload='auto';laughAudio.loop=false;laughAudio.volume=.6;laughAudio.muted=this.muted;
       laughAudio.addEventListener('playing',()=>{
+        if(this.bufferedLaugh())return;
         if(!this.active||this.muted||!this.laughRequested){this.stopLaugh();return;}
         this.beginLaugh();
       });
-      laughAudio.addEventListener('ended',()=>{this.stopLaugh();this.onChange();});
-      laughAudio.addEventListener('error',()=>{this.laughIssue='failed';this.stopLaugh();this.onChange();});
+      laughAudio.addEventListener('ended',()=>{if(!this.bufferedLaugh()){this.stopLaugh();this.onChange();}});
+      laughAudio.addEventListener('error',()=>{if(!this.bufferedLaugh()){this.laughIssue='failed';this.stopLaugh();this.onChange();}});
     }
+    // Mobile WebKit may ignore media preload. Fetch the small WAV eagerly,
+    // independently of the HTML media pipeline, before the player starts.
+    this.prepareLaugh();
+  }
+  bufferedLaugh(){return !!(this.laughUrl&&!this.laughBufferFailed&&this.context?.decodeAudioData&&this.context?.createBufferSource);}
+  prepareLaugh(retry=false){
+    if(!this.laughUrl||this.laughBytes||this.laughFetch||(!retry&&this.laughIssue==='failed'))return;
+    this.laughFetch=Promise.resolve().then(()=>this.loadAudio(this.laughUrl)).then(bytes=>{
+      this.laughFetch=null;this.laughBytes=bytes;this.decodeLaugh();
+    },()=>{this.laughFetch=null;this.laughIssue='failed';if(this.bufferedLaugh())this.stopLaugh();this.onChange();});
+  }
+  decodeLaugh(){
+    if(!this.bufferedLaugh()||!this.laughBytes||this.laughBuffer||this.laughDecode)return;
+    const context=this.context;
+    this.laughDecode=Promise.resolve().then(()=>context.decodeAudioData(this.laughBytes.slice(0))).then(buffer=>{
+      if(context!==this.context)return;
+      this.laughDecode=null;this.laughBuffer=buffer;this.laughIssue=null;this.flushLaugh();this.onChange();
+    },()=>{
+      if(context!==this.context)return;
+      this.laughDecode=null;this.laughBufferFailed=true;this.laughIssue='failed';this.stopLaugh();this.onChange();
+    });
+  }
+  flushLaugh(){
+    if(!this.bufferedLaugh()||!this.laughBuffer||!this.laughRequested||!this.laughPending||!this.active||this.muted||this.context.state!=='running')return;
+    const voice={source:null,gain:null};
+    try{
+      voice.source=this.context.createBufferSource();voice.source.buffer=this.laughBuffer;
+      voice.gain=this.context.createGain();voice.gain.gain.setValueAtTime(.6,this.context.currentTime);
+      voice.source.connect(voice.gain);voice.gain.connect(this.context.destination);
+      this.laughVoice=voice;
+      voice.source.onended=()=>{if(this.laughVoice===voice){this.stopLaugh();this.onChange();}};
+      voice.source.start(this.context.currentTime);this.beginLaugh();
+    }catch{this.laughVoice=voice;this.laughIssue='failed';this.stopLaugh();this.onChange();}
   }
   sync(game){
     const active=game.mode==='run'&&!game.paused&&!game.gameOver;
@@ -36,6 +73,10 @@ export class CoinSound {
       this.laughIssue=error?.name==='NotAllowedError'?'blocked':'failed';this.stopLaugh();this.onChange();
     };
     try{
+      if(this.bufferedLaugh()){
+        this.laughIssue=null;this.laughRequested=true;this.laughPending=true;
+        this.prepareLaugh(true);this.decodeLaugh();this.flushLaugh();return true;
+      }
       if(this.laughIssue==='failed')audio.load();
       this.laughIssue=null;this.laughRequested=true;this.laughPending=true;
       // Called synchronously by the accepted down gesture, never by a frame
@@ -49,21 +90,39 @@ export class CoinSound {
   stopLaugh(){
     this.laughVersion++;this.laughRequested=false;this.laughStarted=false;this.laughPending=false;
     if(this.laughAudio){this.laughAudio.pause();try{this.laughAudio.currentTime=0;}catch{}}
+    const voice=this.laughVoice;this.laughVoice=null;
+    if(voice){
+      if(voice.source){voice.source.onended=null;try{voice.source.stop();}catch{}try{voice.source.disconnect();}catch{}}
+      try{voice.gain?.disconnect();}catch{}
+    }
   }
   retry(){
     this.unlock();
     if(this.laughIssue&&this.laughAudio){
       this.stopLaugh();
-      try{this.laughAudio.load();this.laughIssue=null;}catch{this.laughIssue='failed';}
+      this.laughBufferFailed=false;
+      try{this.laughAudio.load();this.laughIssue=null;this.prepareLaugh(true);this.decodeLaugh();}catch{this.laughIssue='failed';}
       this.onChange();
     }
   }
   unlock(){
     if(this.muted||!this.active)return;
     try{
-      this.context??=this.createContext();const version=++this.version;
-      const resumed=this.context.state==='suspended'?this.context.resume():undefined;
-      Promise.resolve(resumed).then(()=>{if(version===this.version){this.issue=null;this.onChange();}},()=>{
+      if(!this.context||this.context.state==='closed'){
+        this.context=this.createContext();this.laughBuffer=null;this.laughDecode=null;
+        const context=this.context;
+        context.addEventListener?.('statechange',()=>{
+          if(context!==this.context)return;
+          if(context.state!=='running'&&this.laughVoice)this.stopLaugh();
+          if(context.state==='running')this.flushLaugh();
+        });
+      }
+      const version=++this.version;
+      // iPhone WebKit can be interrupted after a background/system audio
+      // interruption, not just suspended. Resume either state in the gesture.
+      const resumed=this.context.state!=='running'?this.context.resume():undefined;
+      this.decodeLaugh();
+      Promise.resolve(resumed).then(()=>{if(version===this.version){this.issue=this.context.state==='running'?null:'blocked';this.flushLaugh();this.onChange();}},()=>{
         if(version===this.version){this.issue='blocked';this.onChange();}
       });
     }catch{this.issue='unavailable';this.onChange();}
@@ -99,5 +158,6 @@ export class CoinSound {
     if(this.muted)this.stop();else this.unlock();this.onChange();
   }
   snapshot(){return {muted:this.muted,active:this.active,state:this.context?.state??'locked',issue:this.issue,voices:this.voices.size,played:this.played,
-    laughPlayed:this.laughPlayed,laughPlaying:this.laughStarted&&this.laughRequested,laughPending:this.laughPending,laughIssue:this.laughIssue};}
+    laughPlayed:this.laughPlayed,laughPlaying:this.laughStarted&&this.laughRequested,laughPending:this.laughPending,laughIssue:this.laughIssue,
+    laughBackend:this.bufferedLaugh()?'buffer':'media',laughReady:!!this.laughBuffer};}
 }

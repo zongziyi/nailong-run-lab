@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>手机大笑音效检查</title>
+<style>body{background:#142c32;color:#f6eed3;font:16px/1.7 system-ui;margin:24px auto;padding:0 18px;max-width:720px}h1{font-size:25px}button{font:inherit;border:1px solid #849774;border-radius:10px;background:#355844;color:#fff4c9;padding:9px 14px;margin:4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#203e40;border-radius:12px;padding:18px}small{color:#b7c9bb}</style>
+<h1>手机大笑音效检查</h1><p>使用游戏同一份音效代码与 WAV。先启用，再检查短笑、暂停恢复和连续播放；此页不运行游戏碰撞。</p>
+<audio id="clip" src="../assets/audio/nailong-laugh.wav" preload="metadata"></audio>
+<button id="start">启用音效</button><button id="laugh">捧腹大笑</button><button id="repeat">连续测试 20 次</button><button id="pause">暂停</button><button id="resume">继续</button><button id="mute">切换静音</button>
+<pre id="facts" role="status"></pre><small>桌面和窄屏检查不能代替 iPhone 微信真机；首次加载若网络慢，请等待“缓存就绪”为 true。</small>
+<script type="module">
+import {CoinSound} from '../src/coin-sound.js?v=mobile-audio-1';
+const game={mode:'inspect',paused:false,gameOver:false,grounded:true,action:'Run',slideFromDive:false,actionSerial:0};
+const audio=document.querySelector('#clip');let fetches=0,mediaPlays=0,repeating=false,timer;
+const sound=new CoinSound({laughAudio:audio,getStorage:()=>null,onChange:render,loadAudio:async url=>{fetches++;const response=await fetch(url);if(!response.ok)throw Error(response.status);return response.arrayBuffer();}});
+function render(){const s=sound.snapshot();document.querySelector('#facts').textContent=JSON.stringify({通道:s.laughBackend,缓存就绪:s.laughReady,上下文:s.state,播放次数:s.laughPlayed,播放中:s.laughPlaying,等待中:s.laughPending,错误:s.issue||s.laughIssue,静音:s.muted,资源请求次数:fetches,HTML播放器次数:mediaPlays,连续测试中:repeating},null,2);}
+audio.addEventListener('play',()=>{mediaPlays++;render();});
+function laugh(){game.action='Slide';game.actionSerial++;sound.playLaugh(game);render();}
+function stopRepeat(){clearInterval(timer);repeating=false;}
+document.querySelector('#start').onclick=()=>{game.mode='run';game.paused=false;game.action='Run';sound.sync(game);sound.unlock();render();};
+document.querySelector('#laugh').onclick=laugh;
+document.querySelector('#repeat').onclick=()=>{stopRepeat();repeating=true;let count=0;timer=setInterval(()=>{laugh();if(++count===20){stopRepeat();render();}},180);render();};
+document.querySelector('#pause').onclick=()=>{stopRepeat();game.paused=true;sound.sync(game);render();};
+document.querySelector('#resume').onclick=()=>{game.paused=false;game.action='Run';game.actionSerial++;sound.sync(game);sound.unlock();render();};
+document.querySelector('#mute').onclick=()=>{sound.toggleMuted();render();};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopRepeat();game.paused=true;sound.sync(game);render();}});
+render();
+</script></html>
