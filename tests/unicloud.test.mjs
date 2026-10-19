@@ -103,9 +103,9 @@ test('origin/method/body validation, preflight, malformed scores and internal er
   const {handler,request,register}=setup();const a=await register('玩家');
   assert.equal((await request('health',{},null,{headers:{origin:'https://untrusted.test'}})).statusCode,403);
   const local=await request('health',{},null,{headers:{origin:'http://127.0.0.1:4188'}});
-  assert.equal(local.statusCode,200);assert.equal(local.headers['Access-Control-Allow-Origin'],'http://127.0.0.1:4188');
+  assert.equal(local.statusCode,200);assert.equal(local.headers['access-control-allow-origin'],'http://127.0.0.1:4188');
   assert.equal((await request('health',{},null,{httpMethod:'GET'})).statusCode,405);
-  const preflight=await request('health',{},null,{httpMethod:'OPTIONS'});assert.equal(preflight.statusCode,204);assert.equal(preflight.headers['Access-Control-Allow-Origin'],origin);
+  const preflight=await request('health',{},null,{httpMethod:'OPTIONS'});assert.equal(preflight.statusCode,204);assert.equal(preflight.headers['access-control-allow-origin'],origin);
   assert.equal((await request('health',{},null,{body:'{broken'})).statusCode,400);
   assert.equal((await request('health',{},null,{body:'x'.repeat(9000)})).statusCode,413);
   assert.equal((await request('health',{},null,{body:Buffer.from('{"action":"health"}').toString('base64'),isBase64Encoded:true})).statusCode,200);
@@ -116,6 +116,22 @@ test('origin/method/body validation, preflight, malformed scores and internal er
   assert.equal(response.statusCode,503);assert.ok(!response.body.includes('secret'));
   assert.equal((await handler({httpMethod:'POST',headers:{origin},body:'{"action":"health"}'})).statusCode,200);
 });
+test('gateway and function headers merge without duplicate CORS origins for local and hosted pages',async()=>{
+  const {request}=setup();
+  for(const source of ['http://127.0.0.1:4173','http://localhost:4173','http://127.0.0.1:4188','http://localhost:4188',origin]){
+    const response=await request('health',{},null,{headers:{origin:source}});
+    // Model the gateway adding lowercase CORS keys to allowed local requests.
+    // HTTP treats case variants as the same field, while the JSON merge does not.
+    const gateway=source.startsWith('http:')?{'access-control-allow-origin':source}:{};
+    const headers=new Headers({...gateway,...response.headers});
+    assert.equal(headers.get('access-control-allow-origin'),source);
+    assert.equal(headers.get('access-control-allow-origin').includes(','),false);
+  }
+  const rejected=await request('health',{},null,{headers:{origin:'http://untrusted.test:4173'}});
+  assert.equal(rejected.statusCode,403);
+  assert.equal(new Headers(rejected.headers).has('access-control-allow-origin'),false);
+});
+
 test('HTTP transport persists one browser identity, combines board and me, and clears rejected tokens',async()=>{
   const {handler}=setup();const values=new Map(),calls=[];
   const storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)};

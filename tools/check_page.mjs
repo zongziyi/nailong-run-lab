@@ -16,8 +16,8 @@ for(const match of source.matchAll(/\$\('#([^']+)'\)/g))assert.ok(ids.includes(m
 for(const match of html.matchAll(/(?:src|href)="(\.\/[^"]+)"/g))await access(new URL(`../${match[1].slice(2)}`,import.meta.url));
 for(const name of ['Clock','WebGLRenderer','InstancedMesh'])assert.equal(typeof THREE[name],'function');
 assert.equal(typeof GLTFLoader,'function');assert.equal(typeof OrbitControls,'function');
-const expectedClips=['Idle','Run','Jump','Slide'];
+const expectedClips=['Idle','Run','Jump','Slide','Laugh'];
 const data=await readFile(new URL('../assets/nailong-rounded.glb',import.meta.url));
 const gltf=JSON.parse(data.subarray(20,20+data.readUInt32LE(12)).toString('utf8'));
 assert.deepEqual(gltf.animations.map(a=>a.name).sort(),expectedClips.sort());
-console.log(`Page/module checks PASS · ${ids.length} unique controls · Three.js r${THREE.REVISION} · 4 embedded clips`);
+console.log(`Page/module checks PASS · ${ids.length} unique controls · Three.js r${THREE.REVISION} · ${expectedClips.length} embedded clips`);

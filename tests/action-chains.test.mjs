@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {RunnerController} from '../src/controller.js';
-import {GAME,gravity,jumpVelocity,distanceAt,timeAtDistance} from '../src/game-config.js';
+import {GAME,OBSTACLES,gravity,jumpVelocity,distanceAt,timeAtDistance} from '../src/game-config.js';
 import {surfaceHeight,obstacleEnd,sweptContact} from '../src/obstacles.js';
 
 const close=(a,b,e=1e-6)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
@@ -71,7 +71,8 @@ test('slope and roof slide jumps and dives retain continuous height across speed
 });
 
 test('a dive may land on an adjacent roof, while leaving a roof edge lands on ground',()=>{
-  const r=runner(),source=train(r),adjacent=train(r,6,1,false);until(r,17);
+  const r=runner(),source=train(r);until(r,17);
+  const adjacent=train(r,distanceAt(r.elapsed+.67)+1-OBSTACLES.train.length,1,false);
   r.input('jump');r.input('right');tick(r,.42);r.input('slide');tick(r,.25);
   assert.equal(r.supportId,adjacent.id);assert.equal(r.action,'Slide');assert.equal(r.slideFromDive,true);
   close(r.y,3.8);assert.equal(r.lives,3);assert.equal(source.hit,false);
@@ -89,15 +90,15 @@ test('diving into a train from below or into an oncoming train still causes dama
   }
 });
 
-test('airborne dives use standing collision; landing slides have their own short entry window',()=>{
+test('airborne dives use standing collision; ground and landing slides immediately use the low collider',()=>{
   const o={id:1,kind:'overhead',lane:0,frontDistance:10,hit:false};
   const at=(action,actionTime,slideFromDive=false)=>({action,actionTime,slideFromDive,elapsed:0,distance:10,x:0,y:0});
   const contact=s=>sweptContact(o,s,{...s,elapsed:.01,actionTime:s.actionTime+.01,distance:10.01});
   assert.notEqual(contact(at('Dive',.4)),null);
-  assert.notEqual(contact(at('Slide',.11)),null);
-  assert.notEqual(contact(at('Slide',.05,true)),null);
-  assert.equal(contact(at('Slide',.11,true)),null);
-  assert.notEqual(contact(at('Slide',.66,true)),null);
+  for(const slideFromDive of [false,true]){
+    for(const age of [0,.05,.11,.3,.66,.83])assert.equal(contact(at('Slide',age,slideFromDive)),null);
+    assert.notEqual(contact(at('Slide',GAME.slideSeconds+.001,slideFromDive)),null);
+  }
   // A jump cancellation must not inherit the low collider from its old slide.
   assert.notEqual(contact(at('Jump',0,true)),null);
 });

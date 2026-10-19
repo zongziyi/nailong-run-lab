@@ -1,5 +1,5 @@
 """Inspect the actual exported binary (no browser or .blend assumptions)."""
-import json, struct, hashlib, math
+import json, struct, hashlib, math, re
 from pathlib import Path
 import numpy as np
 
@@ -22,7 +22,7 @@ def access(idx):
 nodes=doc['nodes'];parents={}
 for i,node in enumerate(nodes):
     for child in node.get('children',[]):parents[child]=i
-mesh_node=next(i for i,n in enumerate(nodes) if 'mesh' in n and 'skin' in n)
+mesh_node=next(i for i,n in enumerate(nodes) if n.get('name')=='Nailong_Rounded')
 skin=doc['skins'][nodes[mesh_node]['skin']]
 primitive=doc['meshes'][nodes[mesh_node]['mesh']]['primitives'][0]
 attrs=primitive['attributes'];positions=access(attrs['POSITION']);joints=access(attrs['JOINTS_0']).astype(int);weights=access(attrs['WEIGHTS_0'])
@@ -30,7 +30,9 @@ indices=access(primitive['indices']).reshape(-1)
 assert indices.max()<len(positions) and joints.max()<len(skin['joints'])
 assert np.max(np.abs(weights.sum(axis=1)-1))<1e-4
 assert np.min(weights)>=0
-assert set(a['name'] for a in doc.get('animations',[]))=={'Idle','Run','Jump','Slide'}
+assert set(a['name'] for a in doc.get('animations',[]))=={'Idle','Run','Jump','Slide','Laugh'}
+assert len(primitive.get('targets',[]))==5,'Expected the face and four pose-space body corrections'
+assert any(n.get('name')=='Laugh_Details' for n in nodes),'Missing head-skinned laugh details'
 assert len(skin['joints'])==16
 assert len(doc.get('images',[]))==1 and 'bufferView' in doc['images'][0]
 inverse_bind=access(skin['inverseBindMatrices']).reshape(-1,4,4).transpose(0,2,1)
@@ -44,7 +46,7 @@ def deform(animation=None,time=0):
     transforms=[{'translation':np.array(n.get('translation',[0,0,0]),float),'rotation':np.array(n.get('rotation',[0,0,0,1]),float),'scale':np.array(n.get('scale',[1,1,1]),float)} for n in nodes]
     if animation:
         for channel in animation['channels']:
-            sampler=animation['samplers'][channel['sampler']];times=access(sampler['input']).reshape(-1);values=access(sampler['output'])
+            sampler=animation['samplers'][channel['sampler']];times=access(sampler['input']).reshape(-1);values=access(sampler['output']).reshape(len(times),-1)
             assert np.all(np.diff(times)>0)
             hi=min(max(1,int(np.searchsorted(times,time,side='right'))),len(times)-1);lo=hi-1
             u=max(0,min(1,float((time-times[lo])/(times[hi]-times[lo]))))
@@ -62,7 +64,11 @@ def deform(animation=None,time=0):
         worlds[i]=(world(parents[i])@local) if i in parents else local
         return worlds[i]
     matrices=np.stack([world(i)@inverse_bind[j] for j,i in enumerate(skin['joints'])])
-    skinned=np.einsum('nvij,nj->nvi',matrices[joints],homogeneous)
+    morph_weights=transforms[mesh_node].get('weights',doc['meshes'][nodes[mesh_node]['mesh']].get('weights',[0]))
+    morphed=positions.copy()
+    for weight,target in zip(morph_weights,primitive.get('targets',[])):
+        morphed+=float(weight)*access(target['POSITION'])
+    skinned=np.einsum('nvij,nj->nvi',matrices[joints],np.column_stack([morphed,np.ones(len(positions))]))
     return (skinned*weights[:,:,None]).sum(axis=1)[:,:3]
 rest=deform()
 triangles=indices.reshape(-1,3)
@@ -85,16 +91,17 @@ for animation in doc['animations']:
         snapshots.append(entry)
     summary.append({'name':animation['name'],'duration':round(float(duration),4),'channels':len(animation['channels']),'samples':snapshots})
 report={'status':'PASS','bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'source_sha256':hashlib.sha256((ROOT/'assets/source/nailong_colored.blend').read_bytes()).hexdigest(),'vertices_after_uv_splits':len(positions),'triangles':len(indices)//3,'joints':len(skin['joints']),'max_weight_sum_error':float(np.max(np.abs(weights.sum(axis=1)-1))),'embedded_images':len(doc['images']),'animations':summary}
-expected_durations={'Idle':2,'Run':.8,'Jump':.9,'Slide':.85}
+expected_durations={'Idle':2,'Run':.8,'Jump':.9,'Slide':.85,'Laugh':.85}
 for entry in summary:assert abs(entry['duration']-expected_durations[entry['name']])<.001
-slide=next(a for a in doc['animations'] if a['name']=='Slide')
-stable=[]
-for time in np.linspace(.20,.65,28):
-    pts=deform(slide,float(time))*.8
-    assert pts[:,1].min()>-.002,'Slide penetrates the ground'
-    assert pts[:,1].max()<=1.35,'Visible slide pose exceeds the configured height'
-    stable.append(float(pts[:,1].max()))
-report['slide_stable_window']={'samples':len(stable),'scaled_max_top':max(stable),'collider_height':1.35}
+scale=float(re.search(r'characterScale:\s*([.\d]+)',(ROOT/'src/game-config.js').read_text(encoding='utf-8')).group(1))
+for name in ['Slide','Laugh']:
+    animation=next(a for a in doc['animations'] if a['name']==name);stable=[]
+    for time in np.linspace(.20,.65,28):
+        pts=deform(animation,float(time))*scale
+        assert pts[:,1].min()>-.002,f'{name} penetrates the ground'
+        assert pts[:,1].max()<=1.35,f'Visible {name} pose exceeds the configured height'
+        stable.append(float(pts[:,1].max()))
+    report[name.lower()+'_stable_window']={'samples':len(stable),'scaled_max_top':max(stable),'collider_height':1.35,'character_scale':scale}
 # Inspect every authored Idle frame, including loop closure. UV seams duplicate
 # exported vertices, but copies of the repaired center shell must move together
 # and retain matching smooth normals so neither cracks nor dark lines return.
@@ -108,7 +115,7 @@ pairs=np.asarray(pairs,dtype=int)
 assert len(pairs)>0,'Expected UV-split center vertices'
 normals=access(attrs['NORMAL'])
 normal_gap=float(np.max(np.linalg.norm(normals[pairs[:,0]]-normals[pairs[:,1]],axis=1)))
-assert normal_gap<1e-4,'Discontinuous center normals can produce a dark seam'
+assert normal_gap<1e-4,f'Discontinuous center normals can produce a dark seam: {normal_gap}'
 idle=next(a for a in doc['animations'] if a['name']=='Idle')
 max_seam_gap=0.0
 for time in np.linspace(0,2,121):

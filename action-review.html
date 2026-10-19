@@ -12,17 +12,19 @@
 </head>
 <body><main>
   <h1>奶龙 · 动作连续衔接</h1>
-  <p>滑铲接起跳，空中下铲，落地再接滑铲。使用游戏中的真实控制器、骨骼动画和模型。</p>
+  <p>地面下滑捧腹大笑；空中下滑快速下铲，落地接原滑铲。使用游戏中的真实控制器、骨骼动画和模型。</p>
   <div id="view"><div id="loading">正在加载奶龙…</div></div>
-  <div class="facts" aria-live="polite"><span>当前动作 <strong id="action">加载中</strong></span><span>模拟时间 <strong id="time">0.00 s</strong></span><span>脚部高度 <strong id="height">0.00</strong></span><span>滑铲计时 <strong id="slide-time">—</strong></span></div>
+  <div class="facts" aria-live="polite"><span>当前动作 <strong id="action">加载中</strong></span><span>模拟时间 <strong id="time">0.00 s</strong></span><span>脚部高度 <strong id="height">0.00</strong></span><span>动作计时 <strong id="slide-time">—</strong></span></div>
   <div class="controls">
+    <select id="scenario" aria-label="演示动作" disabled><option value="laugh">完整捧腹大笑</option><option value="chain">连续动作衔接</option></select>
+    <select id="angle" aria-label="观察角度" disabled><option value="back">背面近看</option><option value="game">游戏后视角</option><option value="threequarter">斜视角</option><option value="front">正面</option><option value="side">侧面</option></select>
     <button id="play" disabled>播放</button><button id="pause" disabled>暂停</button><button id="replay" disabled>从头重播</button><button id="step" disabled>逐帧前进</button>
     <select id="seek" aria-label="检查时刻" disabled>
-      <option value="0">起点 · 奔跑</option><option value="0.40">滑铲保持</option><option value="0.535">滑铲接起跳 · 过渡中</option><option value="0.65">起跳完成</option><option value="0.785">空中下铲 · 过渡中</option><option value="0.90">落地接滑铲 · 过渡中</option><option value="1.15">落地滑铲保持</option><option value="1.285">滑铲再次起跳</option><option value="1.52">再次下铲</option><option value="1.85">第二次落地滑铲</option><option value="2.55">恢复奔跑</option>
+      <option value="0">起点 · 奔跑</option><option value="0.23">大笑进入</option><option value="0.40">抱腹大笑</option><option value="0.65">大笑保持</option><option value="0.90">恢复过渡</option><option value="1.1">恢复奔跑</option>
     </select>
     <select id="speed" aria-label="播放速度" disabled><option value="0.35">0.35 倍慢动作</option><option value="1">正常速度</option></select>
   </div>
-  <p id="sequence">奔跑 → 滑铲 → 起跳 → 下铲 → 落地滑铲 → 再次起跳 → 下铲 → 完整滑铲 → 奔跑</p>
+  <p id="sequence">奔跑 → 捧腹大笑 → 恢复奔跑</p>
   <p class="legend">固定动作演示；每次重播结果一致。落地滑铲计时从 0 开始，持续 0.85 秒。可暂停检查姿势或逐帧前进。</p>
   <p id="error" role="alert" hidden></p><small><a href="./">返回实际游戏 ↗</a>　此页用于复看动作衔接，不生成障碍。</small>
 </main><script type="module" src="./src/action-review.js"></script></body></html>

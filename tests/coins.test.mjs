@@ -113,8 +113,11 @@ test('1,000 seeded continuous routes collect their chosen strings without damage
 
 test('both fork choices merge into later routes at 30/60/120 FPS and quarter-second dropped frames',t=>{
   let forks=0;
-  for(const fps of [30,60,120])for(const alternate of [false,true]){
-    const result=replay(10,{seconds:100,fps,alternate,drop:fps===30});forks+=result.forks;
+  // Faster travel changes which generated layouts admit both branches. Keep
+  // the old seed and a verified fork-bearing seed, rather than lowering coverage.
+  for(const seed of [1,10])for(const fps of [30,60,120])for(const alternate of [false,true]){
+    const result=replay(seed,{seconds:100,fps,alternate,drop:fps===30});forks+=result.forks;
+    if(seed===1)assert.ok(result.forks>0,'Each frame schedule must replay an actual fork');
     assert.ok(result.r.coinCount>120);assert.ok(result.r.coinPlanner.anchors[0].elapsed>result.r.elapsed);
     assert.ok(result.combos>0,'Later routes must include combined actions');
   }

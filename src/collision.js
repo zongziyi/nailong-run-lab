@@ -63,7 +63,10 @@ export function sweptContact(o,from,to){
     const bodyOffset=o.kind==='train'&&o.hasRamp?GAME.rampLength:0;
     // Ramp support uses the height beneath the character's centre. Extending
     // the full-height body into that slope creates an invisible vertical lip.
-    const z=slab(a,b,bodyOffset?bodyOffset:-depth/2,obstacleLength(o)+depth/2);
+    // Match a walkable train's tail to surfaceAt's support edge. A longer
+    // slide collider must not catch that tail once the character starts falling.
+    const tailDepth=o.kind==='train'?GAME.playerDepth:depth;
+    const z=slab(a,b,bodyOffset?bodyOffset:-depth/2,obstacleLength(o)+tailDepth/2);
     const clearance=o.kind==='barrier'?GAME.barrierClearance:spec.clearance;
     const vertical=clearance!==undefined?
       slab(from.y,to.y,base-h+1e-6,base+clearance-1e-7):

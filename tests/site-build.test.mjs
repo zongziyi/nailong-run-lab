@@ -30,6 +30,8 @@ test('published pages resolve every linked asset under a GitHub Pages project su
   const music=readFileSync(new URL('assets/audio/subway-surfers-main-theme.mp3',output));
   assert.ok(music.length>3_000_000,'Published music must contain the full track');
   assert.match(read('assets/audio/SOURCE.md'),/SYBO ApS/);
+  const laugh=readFileSync(new URL('assets/audio/nailong-laugh.wav',output));
+  assert.equal(laugh.toString('ascii',0,4),'RIFF');assert.equal(laugh.length,92654);
 });
 
 test('the shipped game and review module graphs need no node_modules or external CDN',()=>{
@@ -60,6 +62,7 @@ test('the deployment artifact excludes private development files and preserves t
   assert.ok(files.includes('vendor/three/LICENSE'));
   assert.ok(!files.some(file=>/(?:^|[\\/])(?:\.git|node_modules|tests|tools|source)(?:[\\/]|$)|\.blend$/.test(file)));
   assert.ok(!files.some(file=>/(?:^|\/)supabase\/leaderboard\.sql$|\.env$|(?:^|\/)uniCloud-aliyun(?:\/|$)/.test(file)));
+  assert.ok(!files.some(file=>/\.mp4$/i.test(file)),'The private source video must not ship');
 });
 
 test('Pages variables produce public runtime config and reject privileged keys',()=>{

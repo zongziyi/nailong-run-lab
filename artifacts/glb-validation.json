@@ -1,9 +1,9 @@
 {
   "status": "PASS",
-  "bytes": 3668784,
-  "sha256": "12746c63643c6be10014a1d32ed7f103a649e01179ae0946af9b9dd7553239d8",
+  "bytes": 8283416,
+  "sha256": "a7060ad4b2c2032d366c46bb3f6f20f6cd1c31794808f08ac6cb89eb356fc97c",
   "source_sha256": "5182d0d10ddbe13b47dc2858fb8d844f3d52e2ae0c6e31397a0a2ecc35542dc5",
-  "vertices_after_uv_splits": 37431,
+  "vertices_after_uv_splits": 37435,
   "triangles": 67024,
   "joints": 16,
   "max_weight_sum_error": 1.7881393432617188e-07,
@@ -892,17 +892,245 @@
           "max_edge_stretch": 1.0
         }
       ]
+    },
+    {
+      "name": "Laugh",
+      "duration": 0.85,
+      "channels": 50,
+      "samples": [
+        {
+          "phase": 0,
+          "dimensions": [
+            2.1155,
+            3.0,
+            1.6346
+          ],
+          "edge_stretch_p99": 1.0,
+          "max_edge_stretch": 1.0
+        },
+        {
+          "phase": 0.25,
+          "dimensions": [
+            1.9946,
+            1.7995,
+            2.3224
+          ],
+          "edge_stretch_p99": 2.4525,
+          "max_edge_stretch": 3.2878
+        },
+        {
+          "phase": 0.5,
+          "dimensions": [
+            1.995,
+            1.8145,
+            2.3146
+          ],
+          "edge_stretch_p99": 2.4557,
+          "max_edge_stretch": 3.2867,
+          "largest_edges": [
+            {
+              "rest": [
+                [
+                  -0.0,
+                  0.7336,
+                  -0.0556
+                ],
+                [
+                  0.0243,
+                  0.7338,
+                  -0.0572
+                ]
+              ],
+              "posed": [
+                [
+                  0.0028,
+                  0.5896,
+                  -0.8488
+                ],
+                [
+                  0.0809,
+                  0.588,
+                  -0.849
+                ]
+              ],
+              "joints": [
+                [
+                  "Pelvis",
+                  "Thigh.R",
+                  "Thigh.L",
+                  "Root"
+                ],
+                [
+                  "Pelvis",
+                  "Thigh.L",
+                  "Thigh.R",
+                  "Root"
+                ]
+              ],
+              "weights": [
+                [
+                  0.8064875602722168,
+                  0.09675625711679459,
+                  0.09675617516040802,
+                  0.0
+                ],
+                [
+                  0.8338015079498291,
+                  0.14149270951747894,
+                  0.02470576763153076,
+                  0.0
+                ]
+              ]
+            },
+            {
+              "rest": [
+                [
+                  -0.0243,
+                  0.7338,
+                  -0.0572
+                ],
+                [
+                  -0.0,
+                  0.7336,
+                  -0.0556
+                ]
+              ],
+              "posed": [
+                [
+                  -0.0773,
+                  0.588,
+                  -0.849
+                ],
+                [
+                  0.0028,
+                  0.5896,
+                  -0.8488
+                ]
+              ],
+              "joints": [
+                [
+                  "Pelvis",
+                  "Thigh.R",
+                  "Thigh.L",
+                  "Root"
+                ],
+                [
+                  "Pelvis",
+                  "Thigh.R",
+                  "Thigh.L",
+                  "Root"
+                ]
+              ],
+              "weights": [
+                [
+                  0.8338025212287903,
+                  0.14149600267410278,
+                  0.02470148354768753,
+                  0.0
+                ],
+                [
+                  0.8064875602722168,
+                  0.09675625711679459,
+                  0.09675617516040802,
+                  0.0
+                ]
+              ]
+            },
+            {
+              "rest": [
+                [
+                  -0.0,
+                  0.7336,
+                  -0.0556
+                ],
+                [
+                  -0.0243,
+                  0.7338,
+                  -0.0572
+                ]
+              ],
+              "posed": [
+                [
+                  0.0028,
+                  0.5896,
+                  -0.8488
+                ],
+                [
+                  -0.0773,
+                  0.588,
+                  -0.849
+                ]
+              ],
+              "joints": [
+                [
+                  "Pelvis",
+                  "Thigh.R",
+                  "Thigh.L",
+                  "Root"
+                ],
+                [
+                  "Pelvis",
+                  "Thigh.R",
+                  "Thigh.L",
+                  "Root"
+                ]
+              ],
+              "weights": [
+                [
+                  0.8064875602722168,
+                  0.09675625711679459,
+                  0.09675617516040802,
+                  0.0
+                ],
+                [
+                  0.8338025212287903,
+                  0.14149600267410278,
+                  0.02470148354768753,
+                  0.0
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "phase": 0.75,
+          "dimensions": [
+            1.9954,
+            1.8344,
+            2.304
+          ],
+          "edge_stretch_p99": 2.4593,
+          "max_edge_stretch": 3.2853
+        },
+        {
+          "phase": 1,
+          "dimensions": [
+            2.1155,
+            3.0,
+            1.6346
+          ],
+          "edge_stretch_p99": 1.0,
+          "max_edge_stretch": 1.0
+        }
+      ]
     }
   ],
   "slide_stable_window": {
     "samples": 28,
-    "scaled_max_top": 1.320859315507982,
-    "collider_height": 1.35
+    "scaled_max_top": 1.1887733839571835,
+    "collider_height": 1.35,
+    "character_scale": 0.72
+  },
+  "laugh_stable_window": {
+    "samples": 28,
+    "scaled_max_top": 1.33813854135751,
+    "collider_height": 1.35,
+    "character_scale": 0.72
   },
   "idle_full_cycle": {
     "samples": 121,
     "seconds": 2,
-    "center_uv_pairs": 7,
+    "center_uv_pairs": 11,
     "max_center_normal_gap": 0.0,
     "max_center_position_gap": 0.0,
     "loop_gap": 1.1102230246251565e-16

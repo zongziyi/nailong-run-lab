@@ -25,15 +25,14 @@ test('barrier: ground/slide fail, sufficient jump or adjacent lane clears',()=>{
   assert.equal(sweep('barrier',{}, {x:GAME.laneSpacing}),null);
   assert.notEqual(sweep('barrier',{}, {y:1.2},{y:0}),null,'Landing onto a barrier must hit');
 });
-test('overhead: only the stable slide window clears; jumping, early and late slide fail',()=>{
+test('overhead: the full slide clears, while running, jumping and an expired slide fail',()=>{
   assert.notEqual(sweep('overhead'),null);
   assert.notEqual(sweep('overhead',{}, {action:'Jump',y:1.95}),null);
   assert.equal(sweep('overhead',{}, {action:'Slide',actionTime:0.3}),null);
-  assert.notEqual(sweep('overhead',{}, {action:'Slide',actionTime:0.05}),null);
-  assert.notEqual(sweep('overhead',{}, {action:'Slide',actionTime:0.75}),null);
-  assert.notEqual(sweep('overhead',{}, {action:'Slide',actionTime:0.18}),null,'Unsafe entry within the same frame');
-  const late=sweep('overhead',{}, {action:'Slide',actionTime:0.62});
+  for(const actionTime of [0,.05,.18,.75,.79])assert.equal(sweep('overhead',{}, {action:'Slide',actionTime}),null);
+  const late=sweep('overhead',{}, {action:'Slide',actionTime:GAME.slideSeconds-.03});
   assert.ok(Math.abs(late-0.6)<1e-6,'Detect slide recovery inside the contact interval');
+  assert.notEqual(sweep('overhead',{}, {action:'Slide',actionTime:GAME.slideSeconds+.001}),null);
 });
 test('train: jump/slide cannot bypass it; actual lateral position determines contact',()=>{
   assert.notEqual(sweep('train',{}, {action:'Jump',y:1.95}),null);

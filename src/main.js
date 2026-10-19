@@ -15,11 +15,12 @@ const $=s=>document.querySelector(s);
 const stage=$('#stage'),viewport=$('#viewport');
 const runner=new RunnerController();
 const music=new GameMusic($('#background-music'),{onChange:syncMusicButton});
-const coinSound=new CoinSound({onChange:syncCoinSoundButton});
+const coinSound=new CoinSound({onChange:syncCoinSoundButton,laughAudio:$('#laugh-sound')});
 function syncCoinSoundButton(){
   const button=$('#coin-sound-toggle');
-  const label=coinSound.muted?'开启金币音效':coinSound.issue?'重试金币音效':'关闭金币音效';
-  button.classList.toggle('muted',coinSound.muted);button.classList.toggle('music-unavailable',!!coinSound.issue&&!coinSound.muted);
+  const issue=coinSound.issue||coinSound.laughIssue;
+  const label=coinSound.muted?'开启游戏音效':issue?'重试游戏音效':'关闭游戏音效';
+  button.classList.toggle('muted',coinSound.muted);button.classList.toggle('music-unavailable',!!issue&&!coinSound.muted);
   button.setAttribute('aria-pressed',String(coinSound.muted));button.setAttribute('aria-label',label);button.title=label;
 }
 function syncMusicButton(){
@@ -32,7 +33,7 @@ function syncMusicButton(){
 }
 syncMusicButton();
 syncCoinSoundButton();
-// A fresh page always starts with three lives, including restored form state.
+// A fresh page always defaults to one life, including restored form state.
 const lifeModeInputs=[...document.querySelectorAll('input[name="life-mode"]')];
 lifeModeInputs.forEach(input=>{input.checked=input.defaultChecked;});
 const lifeModeLabel=()=>runner.maxLives===1?'一条命':'三条命';
@@ -192,7 +193,8 @@ function syncUI(){
   setText('#gameover-message',`${lifeModeLabel()}已用完 · 本次跑过`);
   const warming=runner.mode==='run'&&runner.elapsed<GAME.warmupSeconds;
   setText('#action-label',ended?'本局结束':warming&&runner.action==='Run'?`准备出发 · ${Math.ceil(GAME.warmupSeconds-runner.elapsed)}`:
-    runner.action==='Run'&&runner.supportType==='roof'?'车顶奔跑':runner.action==='Run'&&runner.supportType==='ramp'?'沿坡登车':labels[runner.action]);
+    runner.action==='Run'&&runner.supportType==='roof'?'车顶奔跑':runner.action==='Run'&&runner.supportType==='ramp'?'沿坡登车':
+    runner.action==='Slide'&&!runner.slideFromDive?'捧腹大笑！':labels[runner.action]);
   $('#protection').hidden=runner.invincibleRemaining<=0||ended;
   setText('#protection-time',`${runner.invincibleRemaining.toFixed(1)}s`);
   const warnings=runner.mode==='run'&&!ended?runner.course.warnings(runner.elapsed):[];
@@ -236,11 +238,18 @@ $('#music-toggle').addEventListener('click',()=>{
   else music.toggleMuted();
 });
 $('#coin-sound-toggle').addEventListener('click',()=>{
-  if(coinSound.issue&&!coinSound.muted)coinSound.unlock();else coinSound.toggleMuted();
+  if((coinSound.issue||coinSound.laughIssue)&&!coinSound.muted)coinSound.retry();else coinSound.toggleMuted();
 });
 for(const id of ['#reset','#reset-overlay'])$(id).addEventListener('click',()=>setMode(runner.mode));
 document.querySelectorAll('[data-angle]').forEach(b=>b.addEventListener('click',()=>{setAngle(b.dataset.angle);document.querySelectorAll('[data-angle]').forEach(a=>a.classList.toggle('active',a===b));}));
-function input(command){coinSound.unlock();if(runner.input(command))animator.update(runner,0);syncUI();}
+function input(command){
+  coinSound.unlock();
+  if(runner.input(command)){
+    animator.update(runner,0);
+    if(command==='slide')coinSound.playLaugh(runner);
+  }
+  syncUI();
+}
 document.querySelectorAll('[data-input]').forEach(b=>b.addEventListener('click',()=>input(b.dataset.input)));
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'jump',KeyW:'jump',Space:'jump',ArrowDown:'slide',KeyS:'slide'};
 window.addEventListener('keydown',e=>{

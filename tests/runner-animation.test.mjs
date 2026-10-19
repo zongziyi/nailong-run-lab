@@ -6,7 +6,8 @@ import {GAME,distanceAt} from '../src/game-config.js';
 
 function fixture(){
   const root=new THREE.Group(),bone=new THREE.Bone();bone.name='Root';root.add(bone);
-  const clips=[['Idle',2,0],['Run',.8,.2],['Jump',.9,.6],['Slide',.85,-1.4]].map(([name,duration,angle])=>{
+  const face=new THREE.Object3D();face.name='Face';face.morphTargetInfluences=[0];root.add(face);
+  const clips=[['Idle',2,0],['Run',.8,.2],['Jump',.9,.6],['Slide',.85,-1.4],['Laugh',.85,.8]].map(([name,duration,angle])=>{
     const quaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(angle,0,0));
     return new THREE.AnimationClip(name,duration,[
       new THREE.VectorKeyframeTrack('Root.position',[0,duration/2,duration],[0,0,0,0,angle*.1,0,0,0,0]),
@@ -14,8 +15,9 @@ function fixture(){
       new THREE.VectorKeyframeTrack('Root.scale',[0,duration],[1,1,1,1,1,1]),
     ]);
   });
+  clips.find(clip=>clip.name==='Laugh').tracks.push(new THREE.NumberKeyframeTrack('Face.morphTargetInfluences',[0,.16,.67,.85],[0,1,1,0]));
   const animator=new RunnerAnimation(root,clips),state={action:'Run',actionSerial:0,actionTime:0,distance:0};
-  animator.reset(state);return {root,bone,animator,state};
+  animator.reset(state);return {root,bone,face,animator,state};
 }
 const pose=b=>[...b.position.toArray(),...b.quaternion.toArray(),...b.scale.toArray()];
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
@@ -38,7 +40,7 @@ test('Dive holds the jump tuck, landing slide samples its hold, and elapsed slid
   animator.update(state,.1);close(animator.actions.Jump.time,.45);const tuck=pose(bone);
   state.actionTime=2;animator.update(state,.3);same(pose(bone),tuck);
   Object.assign(state,{action:'Slide',actionSerial:2,actionTime:0,slideFromDive:true});animator.update(state,.1);
-  close(animator.actions.Slide.time,GAME.slideSafeStart);assert.equal(state.actionTime,0);
+  close(animator.actions.Slide.time,GAME.slidePoseHoldStart);assert.equal(state.actionTime,0);
   state.actionTime=.76;animator.update(state,.76);close(animator.actions.Slide.time,.76);
 });
 
@@ -79,4 +81,27 @@ test('a landing at the end of a dropped frame only ages the blend by grounded ti
   const {animator,state}=fixture();Object.assign(state,{action:'Dive',actionSerial:1,actionTime:.2,elapsed:.7});animator.update(state,.2);
   Object.assign(state,{action:'Slide',actionSerial:2,actionTime:.012,slideFromDive:true,elapsed:.95});animator.update(state,.25);
   close(animator.blendTime,.012);
+});
+
+test('ground slide selects Laugh, while an airborne dive and its landing retain the original clips',()=>{
+  const {animator,state}=fixture();
+  Object.assign(state,{action:'Slide',actionSerial:1,actionTime:.3,slideFromDive:false});animator.update(state,.1);
+  assert.equal(animator.activeClip,'Laugh');
+  Object.assign(state,{action:'Dive',actionSerial:2,actionTime:.05});animator.update(state,.1);
+  assert.equal(animator.activeClip,'Jump');
+  Object.assign(state,{action:'Slide',actionSerial:3,actionTime:0,slideFromDive:true});animator.update(state,.1);
+  assert.equal(animator.activeClip,'Slide');close(animator.actions.Slide.time,GAME.slidePoseHoldStart);
+});
+
+test('laugh expression blends from the displayed face and clears on interruption, pause and reset',()=>{
+  const {face,animator,state}=fixture();
+  Object.assign(state,{action:'Slide',actionSerial:1,actionTime:.3});animator.update(state,.1);
+  close(face.morphTargetInfluences[0],1);
+  Object.assign(state,{action:'Jump',actionSerial:2,actionTime:0});animator.update(state,0);
+  close(face.morphTargetInfluences[0],1);
+  animator.update(state,.035);const partial=face.morphTargetInfluences[0];assert.ok(partial>0&&partial<1);
+  state.paused=true;animator.update(state,1);close(face.morphTargetInfluences[0],partial);
+  state.paused=false;animator.update(state,.1);close(face.morphTargetInfluences[0],0);
+  Object.assign(state,{action:'Slide',actionSerial:3,actionTime:.4});animator.update(state,.1);close(face.morphTargetInfluences[0],1);
+  Object.assign(state,{action:'Run',actionSerial:0,actionTime:0});animator.reset(state);close(face.morphTargetInfluences[0],0);
 });

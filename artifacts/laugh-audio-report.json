@@ -1,0 +1,21 @@
+{
+  "source_name": "ac6a0d8c0a12de991cc1df98bf50810d.mp4",
+  "source_sha256": "86ecc9edc4bb51ba3d30617b5f831e7224716446174858eb09d79c56d2c82966",
+  "source_decoded_seconds": 8.404172335600906,
+  "start_seconds": 0.55,
+  "end_seconds": 1.6,
+  "seconds": 1.05,
+  "sample_rate": 44100,
+  "channels": 1,
+  "bits_per_sample": 16,
+  "fade_in_ms": 10,
+  "fade_out_ms": 60,
+  "target_peak_dbfs": -3,
+  "actual_peak_dbfs": -3.000097173025577,
+  "rms_dbfs": -14.91157511502455,
+  "clipped_samples": 0,
+  "first_sample": 0,
+  "last_sample": 0,
+  "wav_bytes": 92654,
+  "wav_sha256": "d8caaeaf84bd5b01e83c447be50274ab1db7ccf808c08aa0d8952d0d00e1d046"
+}

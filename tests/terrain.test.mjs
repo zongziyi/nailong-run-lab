@@ -13,7 +13,7 @@ function tick(r,seconds,fps=120){for(let t=0;t<seconds-1e-9;t+=1/fps)r.update(Ma
 function until(r,distance,fps=120){tick(r,Math.max(0,timeAtDistance(distance)-r.elapsed),fps);}
 
 test('logarithmic acceleration grows forever with diminishing increments; distance is its integral',()=>{
-  close(speedAt(0),8.8);close(distanceAt(0),0);
+  close(speedAt(0),10.56);close(distanceAt(0),0);
   const deltas=[];
   for(let t=0;t<=600;t+=15){
     deltas.push(speedAt(t+15)-speedAt(t));assert.ok(speedAt(t+15)>speedAt(t));
@@ -23,7 +23,7 @@ test('logarithmic acceleration grows forever with diminishing increments; distan
   for(let i=1;i<deltas.length;i++)assert.ok(deltas[i]<deltas[i-1]);
   assert.ok(speedAt(1e9)>speedAt(1e6));
   const r=runner();tick(r,2);const before=[r.elapsed,r.distance,r.speed];r.pause();tick(r,5);
-  assert.deepEqual([r.elapsed,r.distance,r.speed],before);r.start();close(r.speed,8.8);close(r.distance,0);
+  assert.deepEqual([r.elapsed,r.distance,r.speed],before);r.start();close(r.speed,10.56);close(r.distance,0);
 });
 
 test('ramp toe, slope, roof and tail form continuous walkable terrain without damage',()=>{
@@ -55,7 +55,8 @@ test('side entry into a ramp or train hits instead of snapping upward; leaving a
 });
 
 test('a downward jump can land on an adjacent roof; falling sideways returns to ground',()=>{
-  const r=runner();train(r);const adjacent=train(r,6,1,false);until(r,15);
+  const r=runner();train(r);until(r,15);
+  const adjacent=train(r,distanceAt(r.elapsed+.92)+1-OBSTACLES.train.length,1,false);
   r.input('jump');r.input('right');tick(r,.92);assert.equal(r.supportId,adjacent.id);close(r.y,3.8);assert.equal(r.lives,3);
   assert.equal(r.jumpSourceId,null);
   r.input('left');r.input('left');tick(r,1);close(r.y,0);assert.equal(r.supportType,'ground');
@@ -113,7 +114,7 @@ test('pause on a roof freezes motion and returning to inspection clears terrain,
   const r=runner();train(r);until(r,16);r.input('jump');tick(r,.2);r.pause();
   const frozen=JSON.stringify(r);tick(r,3);assert.equal(JSON.stringify(r),frozen);
   r.inspect();assert.equal(r.mode,'inspect');assert.equal(r.course.active.length,0);assert.equal(r.supportId,null);
-  assert.equal(r.supportType,'ground');assert.equal(r.grounded,true);close(r.verticalVelocity,0);close(r.y,0);close(r.speed,8.8);
+  assert.equal(r.supportType,'ground');assert.equal(r.grounded,true);close(r.verticalVelocity,0);close(r.y,0);close(r.speed,10.56);
   r.start();assert.equal(r.action,'Run');assert.equal(r.actionTime,0);assert.equal(r.lives,3);assert.equal(r.paused,false);
 });
 

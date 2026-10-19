@@ -50,15 +50,22 @@ assert max(s['scaled_top'] for s in samples)<=1.35,'Slide does not fit the confi
 track=rig.animation_data.nla_tracks.new();track.name='Slide';track.strips.new('Slide',0,action);track.mute=True
 rig.animation_data.action=None;clear_pose();scene.frame_set(0)
 bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);obj.select_set(True);bpy.context.view_layer.objects.active=rig
+details=bpy.data.objects.get('Laugh_Details')
+if details:details.select_set(True)
 scene.frame_start=0;scene.frame_end=120
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/nailong-rounded.blend'))
 bpy.ops.export_scene.gltf(filepath=str(ROOT/'assets/nailong-rounded.glb'),export_format='GLB',use_selection=True,
     export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_nla_strips=True,
-    export_yup=True,export_skins=True,export_def_bones=True)
+    export_yup=True,export_skins=True,export_def_bones=True,export_morph=True,export_morph_normal=True,
+    export_try_sparse_sk=False,export_try_omit_sparse_sk=False)
+if details:
+    from laugh_export import finish_laugh_export
+    finish_laugh_export(ROOT/'assets/nailong-rounded.glb')
 assert hashlib.sha256(source.read_bytes()).hexdigest()==source_hash
 (ROOT/'artifacts/slide-report.json').write_text(json.dumps({'source_sha256':source_hash,'stable_samples':samples,'clip_seconds':.85},indent=2),encoding='utf-8')
 report_path=ROOT/'artifacts/model-report.json'
 report=json.loads(report_path.read_text(encoding='utf-8'))
 report.update(glb_bytes=(ROOT/'assets/nailong-rounded.glb').stat().st_size,animation_fps=60,
     durations={'Idle':2,'Run':.8,'Jump':.9,'Slide':.85},slide_style='back-leaning slide tackle')
+if details:report['durations']['Laugh']=.85
 report_path.write_text(json.dumps(report,indent=2),encoding='utf-8')

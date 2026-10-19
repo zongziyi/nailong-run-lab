@@ -66,9 +66,11 @@ function createHandler({db,now=Date.now,allowedOrigins=ORIGINS}){
     const headers=Object.fromEntries(Object.entries(event.headers||{}).map(([key,value])=>[key.toLowerCase(),value]));
     const origin=headers.origin||'',allowed=allowedOrigins.includes(origin);
     const response=(statusCode,value)=>({mpserverlessComposedResponse:true,statusCode,isBase64Encoded:false,
-      headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Vary':'Origin',
-        ...(allowed?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS',
-          'Access-Control-Allow-Headers':'Content-Type, Authorization','Access-Control-Max-Age':'3600'}:{})},body:statusCode===204?'':JSON.stringify(value)});
+      // Match the gateway's lowercase keys. Mixed casing can produce two
+      // Access-Control-Allow-Origin fields when uniCloud adds localhost CORS.
+      headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','vary':'Origin',
+        ...(allowed?{'access-control-allow-origin':origin,'access-control-allow-methods':'POST, OPTIONS',
+          'access-control-allow-headers':'Content-Type, Authorization','access-control-max-age':'3600'}:{})},body:statusCode===204?'':JSON.stringify(value)});
     try{
       if(!allowed)fail('请求来源未允许',403);
       if(event.httpMethod==='OPTIONS')return response(204,null);

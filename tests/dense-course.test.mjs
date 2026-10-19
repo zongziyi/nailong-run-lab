@@ -11,8 +11,13 @@ const state=extra=>({elapsed:0,distance:9.5,x:0,y:0,action:'Run',actionTime:0,su
 function emptyRunner(){const r=new RunnerController({random:random(9)});r.start();r.course.clear();r.course.nextFrontDistance=Infinity;return r;}
 function place(r,kind,extra={}){const o=r.course.free.pop();Object.assign(o,record(kind,{id:r.course.nextId++,...extra}));r.course.active.push(o);return o;}
 
-test('initial speed is unchanged while logarithmic acceleration gain is 50 percent larger',()=>{
-  close(speedAt(0),8.8);close(speedAt(30),8.8+4.5*Math.log(3));close(speedAt(120),8.8+4.5*Math.log(9));
+test('speed and integrated distance are 20 percent faster throughout the logarithmic curve',()=>{
+  close(speedAt(0),10.56);
+  for(const t of [0,1,30,120,300,600]){
+    close(speedAt(t),1.2*(8.8+4.5*Math.log1p(t/15)));
+    close(distanceAt(t),1.2*(8.8*t+4.5*((t+15)*Math.log1p(t/15)-t)));
+    close(timeAtDistance(distanceAt(t)),t);
+  }
   assert.equal(GAME.maxObstacles,32);assert.equal(GAME.doubleProbability,.7);
   assert.deepEqual(SPAWN_WEIGHTS,{barrier:25,overhead:25,crate:25,train:15,oncoming:10});
 });

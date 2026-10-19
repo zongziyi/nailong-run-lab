@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {RunnerController} from '../src/controller.js';
 import {GAME,distanceAt,timeAtDistance,gravity} from '../src/game-config.js';
-import {surfaceHeight,sweptContact} from '../src/obstacles.js';
+import {surfaceHeight,sweptContact,obstacleEnd} from '../src/obstacles.js';
 
 const close=(a,b,epsilon=1e-6)=>assert.ok(Math.abs(a-b)<epsilon,`${a} != ${b}`);
 function runner(maxLives=3){
@@ -77,12 +77,9 @@ test('crossing below a roof before entering its lane still hits the side',()=>{
   assert.equal(r.supportId,null);
 });
 
-test('aligned and offset transfers retain support across speeds, jumps, dives and frame schedules',()=>{
+test('aligned and offset transfers land on available roofs or safely fall past their tails at every speed',()=>{
   for(const elapsed of [0,120,600])for(const offset of [0,8])for(const direction of [-1,1])
     for(const dive of [false,true])for(const fps of [30,60,120,4]){
-      // At the highest speed a full jump passes an aligned train tail; use a
-      // dive for that layout rather than pretending there is still a roof.
-      if(elapsed===600&&offset===0&&!dive)continue;
       const r=runner(1);r.elapsed=elapsed;const front=r.distance+2;
       const source=train(r,front),target=train(r,front+offset,direction);
       until(r,front+8.2,fps);const started=r.elapsed;
@@ -92,8 +89,19 @@ test('aligned and offset transfers retain support across speeds, jumps, dives an
       const where=`elapsed=${elapsed}, offset=${offset}, direction=${direction}, dive=${dive}, fps=${fps}`;
       assert.equal(r.lives,1,where);assert.equal(r.gameOver,false,where);assert.equal(r.damageSerial,0,where);
       assert.equal(source.hit,false,where);assert.equal(target.hit,false,where);
-      assert.equal(r.supportId,target.id,where);assert.equal(r.jumpSourceId,null,where);
-      assert.equal(r.action,dive?'Slide':'Run',where);close(r.y,surfaceHeight(target,r.distance));
+      assert.equal(r.jumpSourceId,null,where);
+      if(r.distance<=obstacleEnd(target)+GAME.playerDepth/2){
+        assert.equal(r.supportId,target.id,where);
+        assert.equal(r.action,dive?'Slide':'Run',where);close(r.y,surfaceHeight(target,r.distance));
+      }else{
+        // Faster travel can carry the character beyond the entire target.
+        // This is a safe fall, not a landing on a roof that no longer exists.
+        assert.equal(r.supportId,null,where);assert.equal(r.grounded,false,where);
+        assert.equal(r.supportType,'air',where);tick(r,1.5,fps);
+        assert.equal(r.supportType,'ground',where);close(r.y,0);
+        assert.equal(r.lives,1,where);assert.equal(r.damageSerial,0,where);
+        assert.equal(source.hit,false,where);assert.equal(target.hit,false,where);
+      }
     }
 });
 

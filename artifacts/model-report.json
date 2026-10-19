@@ -25,16 +25,19 @@
     "Idle",
     "Run",
     "Jump",
-    "Slide"
+    "Slide",
+    "Laugh"
   ],
-  "glb_bytes": 3668784,
+  "glb_bytes": 8283416,
   "animation_fps": 60,
   "durations": {
     "Idle": 2.0,
     "Run": 0.8,
     "Jump": 0.9,
-    "Slide": 0.85
+    "Slide": 0.85,
+    "Laugh": 0.85
   },
   "slide_style": "back-leaning slide tackle",
-  "appearance_revision": 1
+  "appearance_revision": 1,
+  "laugh_style": "grounded belly laugh with closed eyes and open mouth"
 }

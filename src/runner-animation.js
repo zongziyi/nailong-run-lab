@@ -21,9 +21,13 @@ export class RunnerAnimation {
         if(node)nodes.add(node);
       }
     }
-    for(const name of ['Idle','Run','Jump','Slide'])if(!this.actions[name])throw new Error(`模型缺少 ${name} 动作`);
+    for(const name of ['Idle','Run','Jump','Slide','Laugh'])if(!this.actions[name])throw new Error(`模型缺少 ${name} 动作`);
     this.poses=[...nodes].map(node=>({node,position:node.position.clone(),quaternion:node.quaternion.clone(),scale:node.scale.clone(),
       targetPosition:node.position.clone(),targetQuaternion:node.quaternion.clone(),targetScale:node.scale.clone()}));
+    this.expressions=[];
+    root.traverse(node=>{
+      if(node.morphTargetInfluences)this.expressions.push({node,from:[...node.morphTargetInfluences],target:[...node.morphTargetInfluences]});
+    });
     this.resetState();
   }
   resetState(){this.action=null;this.serial=null;this.activeClip=null;this.blendTime=GAME.actionBlendSeconds;this.idleTime=0;}
@@ -37,10 +41,11 @@ export class RunnerAnimation {
       for(const pose of this.poses){
         pose.position.copy(pose.node.position);pose.quaternion.copy(pose.node.quaternion);pose.scale.copy(pose.node.scale);
       }
+      for(const expression of this.expressions)expression.from=[...expression.node.morphTargetInfluences];
       this.action=state.action;this.serial=state.actionSerial;
       this.blendTime=immediate?GAME.actionBlendSeconds:0;
     }
-    const name=state.action==='Dive'?'Jump':state.action;
+    const name=state.action==='Dive'?'Jump':state.action==='Slide'&&!state.slideFromDive?'Laugh':state.action;
     const action=this.actions[name],duration=action.getClip().duration;
     if(this.activeClip!==name){
       this.mixer.stopAllAction();action.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();this.activeClip=name;
@@ -50,12 +55,16 @@ export class RunnerAnimation {
       for(const pose of this.poses){
         pose.node.position.copy(pose.targetPosition);pose.node.quaternion.copy(pose.targetQuaternion);pose.node.scale.copy(pose.targetScale);
       }
+      for(const expression of this.expressions)expression.node.morphTargetInfluences.splice(0,expression.target.length,...expression.target);
     }
+    // Clips without expression tracks target the neutral face explicitly. The
+    // displayed transition below still begins at the last visible expression.
+    if(name!=='Laugh')for(const expression of this.expressions)expression.node.morphTargetInfluences.fill(0);
     let time=state.actionTime??0;
     if(name==='Idle')time=this.idleTime%duration;
     else if(name==='Run')time=((state.distance??0)/GAME.speed)%duration;
     else if(state.action==='Dive')time=GAME.jumpSeconds/2;
-    else if(name==='Slide'&&state.slideFromDive)time=Math.max(GAME.slideSafeStart,time);
+    else if(name==='Slide'&&state.slideFromDive)time=Math.max(GAME.slidePoseHoldStart,time);
     // LoopOnce may have paused the action on a previous sample; sampling is
     // absolute and independent of render rate, including Jump <-> Dive reuse.
     action.paused=false;action.enabled=true;
@@ -72,6 +81,12 @@ export class RunnerAnimation {
         pose.node.quaternion.slerpQuaternions(pose.quaternion,pose.targetQuaternion,weight);
         pose.node.scale.lerpVectors(pose.scale,pose.targetScale,weight);
       }
+    }
+    for(const expression of this.expressions){
+      expression.target=[...expression.node.morphTargetInfluences];
+      expression.node.morphTargetInfluences.forEach((value,index)=>{
+        expression.node.morphTargetInfluences[index]=THREE.MathUtils.lerp(expression.from[index],value,weight);
+      });
     }
     this.groundPose();
   }

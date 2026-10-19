@@ -310,16 +310,21 @@ def slide(t):
     s=apply_slide(pose,t*.85)
     settle_slide(bpy,rig,obj,s)
 animate('Idle',120,idle);animate('Run',48,run);animate('Jump',54,jump);animate('Slide',51,slide)
+from laugh_pose import author_laugh
+details=author_laugh(rig,obj)
 clear_pose();scene.frame_set(0)
 for b in pose:b.scale=(1,1,1)
 rig.animation_data.action=None
 
 # Keep an editable Blender deliverable, and export only the character/rig.
-bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);obj.select_set(True);bpy.context.view_layer.objects.active=rig
+bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);obj.select_set(True);details.select_set(True);bpy.context.view_layer.objects.active=rig
 scene.frame_start=0;scene.frame_end=120
 bpy.ops.wm.save_as_mainfile(filepath=str(ASSETS/'nailong-rounded.blend'))
-bpy.ops.export_scene.gltf(filepath=str(ASSETS/'nailong-rounded.glb'),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_nla_strips=True,export_yup=True,export_skins=True,export_def_bones=True)
+bpy.ops.export_scene.gltf(filepath=str(ASSETS/'nailong-rounded.glb'),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_nla_strips=True,export_yup=True,export_skins=True,export_def_bones=True,export_morph=True,export_morph_normal=True,export_try_sparse_sk=False,export_try_omit_sparse_sk=False,export_optimize_disable_viewport=False)
+from laugh_export import finish_laugh_export
+finish_laugh_export(ASSETS/'nailong-rounded.glb')
 report={'source':'https://github.com/bigdiu/naiwa-nailoong-blender-model','author':'WeDai','blender':bpy.app.version_string,'vertices':len(verts),'faces':len(obj.data.polygons),'bounds':[[min(v.co[i] for v in verts),max(v.co[i] for v in verts)] for i in range(3)],'bones':len(arm.bones),'hand_region_vertices':len(hand_region),'unweighted_vertices_repaired':unweighted,'clips':['Idle','Run','Jump','Slide'],'glb_bytes':(ASSETS/'nailong-rounded.glb').stat().st_size}
 report.update(appearance_revision=REVISION,appearance_seam=appearance_seam,appearance_eyes=appearance_eyes)
+report.update(clips=['Idle','Run','Jump','Slide','Laugh'],animation_fps=60,durations={'Idle':2,'Run':.8,'Jump':.9,'Slide':.85,'Laugh':.85},laugh_style='grounded belly laugh with closed eyes and open mouth')
 (ROOT/'artifacts/model-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
 print('PREPARED_MODEL',json.dumps(report))

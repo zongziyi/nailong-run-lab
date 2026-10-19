@@ -14,7 +14,7 @@ function openPreview(){
   opener.on('error',()=>console.log(`未能自动打开浏览器，请手动访问 ${localUrl}`));
   opener.unref();
 }
-const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.glb':'model/gltf-binary', '.png':'image/png', '.jpg':'image/jpeg', '.webp':'image/webp', '.svg':'image/svg+xml', '.mp3':'audio/mpeg' };
+const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.glb':'model/gltf-binary', '.png':'image/png', '.jpg':'image/jpeg', '.webp':'image/webp', '.svg':'image/svg+xml', '.mp3':'audio/mpeg', '.wav':'audio/wav' };
 const server = http.createServer(async (req,res) => {
   try {
     let requestPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);

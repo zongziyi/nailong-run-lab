@@ -29,7 +29,7 @@ function sample(){
 }
 for(const clip of gltf.animations)for(let frame=0;frame<=60;frame++){
   const time=clip.duration*frame/60;
-  animator.reset({action:clip.name,actionTime:time,distance:time*8.8});sample();
+  animator.reset({action:clip.name,actionTime:time,slideFromDive:clip.name==='Slide',distance:time*8.8});sample();
 }
 const runner=new RunnerController();runner.start();runner.course.clear();runner.course.nextFrontDistance=Infinity;animator.reset(runner);
 const events=[[.15,'slide'],[.5,'jump'],[.75,'slide'],[1.25,'jump'],[1.5,'slide']];let event=0;
